@@ -489,7 +489,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				log.Printf("Default")
 				// Apply here ??? If not leader maybe ?
 				if myCommitIndex > myLastApplied {
-					myLastApplied += 1
+					
 					// toApply := myLog[myLastApplied]
 					// opCmd := toApply.Cmd // ??
 					clientRequest, existsInMyMachine := clientReq_id_map[myLastApplied]
@@ -501,6 +501,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					} else {
 						s.HandleCommand(clientRequest, false)  // This one just executes it on its own machine
 					}
+					myLastApplied += 1
 				}
 				// When to send back to client? 
 				// Where do we keep trying a failed node as a leader?
