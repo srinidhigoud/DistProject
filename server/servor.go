@@ -51,13 +51,11 @@ func randomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 	if heartbeat{
 		const DurationMax = 4000
 		const DurationMin = 1000
-		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 	} else {
 		const DurationMax = 400
 		const DurationMin = 100
-		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 	}
-	
+	return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 }
 
 
@@ -269,10 +267,11 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				leaderPrevLogIndex := ae.arg.PrevLogIndex
 				leaderPrevLogTerm := ae.arg.PrevLogTerm
 				ae_list := ae.arg.Entries
-				isHeartBeat := false
 				if len(ae_list) == 0 {
-					isHeartBeat = true  
-				} 
+					isHeartBeat := true  
+				} else {
+					isHeartBeat := false
+				}
 				
 				if isHeartBeat {
 					log.Printf("Received heartbeat from %v", myLeaderID)
@@ -289,10 +288,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					} else {
 						if myLastLogIndex == leaderPrevLogIndex  && myLog[myLastLogIndex].Term == leaderPrevLogTerm {
-							for _, entry := range entriesToAppend {
-								myLog = append( myLog, entry)
-							}
-							
+							myLog = append( myLog, ae_list)
 							ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 						} else {
 							if myLastLogIndex < leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm {
@@ -303,7 +299,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									for _, entry := range ae_list {
 										if myLog[entry.Index].Term != entry.Term {
 											// delete everything after it
-											min_index = math.Min(min_index,entry.Index)
+											min_index = Min(min_index,entry.Index)
 										}
 									}
 									myLog = myLog[:min_index]
@@ -315,7 +311,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						myLeaderID = ae.arg.LeaderID // ?? here ??
 						myLastLogIndex = int64(len(myLog) - 1)
 						myLastLogTerm = myLog[myLastLogIndex].Term
-						myCommitIndex = math.Min(leaderCommit, myLastLogIndex)
+						myCommitIndex = Min(leaderCommit, myLastLogIndex)
 					}
 				}
 
@@ -492,4 +488,3 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	}
 	log.Printf("Strange to arrive here")
 }
-
