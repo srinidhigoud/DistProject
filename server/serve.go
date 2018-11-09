@@ -6,7 +6,6 @@ import (
 	rand "math/rand"
 	"net"
 	"time"
-	"math"
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
@@ -289,7 +288,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					} else {
 						if myLastLogIndex == leaderPrevLogIndex  && myLog[myLastLogIndex].Term == leaderPrevLogTerm {
-							for _, entry := range entriesToAppend {
+							for _, entry := range ae_list {
 								myLog = append( myLog, entry)
 							}
 							
@@ -303,7 +302,10 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									for _, entry := range ae_list {
 										if myLog[entry.Index].Term != entry.Term {
 											// delete everything after it
-											min_index = math.Min(min_index,entry.Index)
+											if entry.Index < min_index {
+												min_index = entry.Index
+											}
+											
 										}
 									}
 									myLog = myLog[:min_index]
@@ -315,7 +317,11 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						myLeaderID = ae.arg.LeaderID // ?? here ??
 						myLastLogIndex = int64(len(myLog) - 1)
 						myLastLogTerm = myLog[myLastLogIndex].Term
-						myCommitIndex = math.Min(leaderCommit, myLastLogIndex)
+						if leaderCommit < myLastLogIndex {
+							myCommitIndex = leaderCommit
+						} else {
+							myCommitIndex = myLastLogIndex
+						}
 					}
 				}
 
