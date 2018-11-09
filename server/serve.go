@@ -232,7 +232,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					for p, c := range peerClients {
 						go func(c pb.RaftClient, p string) {
 							ret, err := c.AppendEntries(context.Background(), &heartbeat)
-							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
+							// appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
 						}(c, p)
 					}
 					restartTimer(timer, r, true)
@@ -419,7 +419,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									myNextIndex[p] = myLastLogIndex + 1
 									go func(c pb.RaftClient, p string) {
 										ret, err := c.AppendEntries(context.Background(), &heartbeat)
-										appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
+										// appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
 									}(c, p)
 								}
 								// break //?
