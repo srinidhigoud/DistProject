@@ -480,7 +480,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// Apply here ??? If not leader maybe ?
 				if myCommitIndex > myLastApplied {
 					myLastApplied += 1
-					toApply := myLog[myLastApplied]
+					// toApply := myLog[myLastApplied]
 					// opCmd := toApply.Cmd // ??
 					clientRequest, existsInMyMachine := clientReq_id_map[myLastApplied]
 					if myState == "3" {
