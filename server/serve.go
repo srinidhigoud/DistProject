@@ -197,7 +197,6 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	// Run forever handling inputs from various channels
 	for {
 		if count_inf%1000 == 0 {
-			log.Printf(count_inf)
 			log.Printf("%v",count_inf)
 		}
 		count_inf += 1
@@ -336,7 +335,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// This will also take care of any pesky timeouts that happened while processing the operation.
 				restartTimer(timer, r, false)
 			case vr := <-raft.VoteChan:
-				log.Printf("We received a RequestVote RPC from a raft peer")
+				//log.Printf("We received a RequestVote RPC from a raft peer")
 				// We received a RequestVote RPC from a raft peer
 				// TODO: Fix this.
 
@@ -374,6 +373,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					log.Printf("I am follower %v -  votedFor %v", id, votedFor)
 					myLeaderID = votedFor
 				}
+				log.Printf("We received a RequestVote RPC from a raft peer")
 				// vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false} // Should it be last call?
 			case vr := <-voteResponseChan:
 				// We received a response to a previou vote request.
