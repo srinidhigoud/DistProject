@@ -114,6 +114,7 @@ func connectToPeer(peer string) (pb.RaftClient, error) {
 
 // The main service loop. All modifications to the KV store are run through here.
 func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	const MaxUint = ^uint64(0) 
 	const MinUint = 0 
 	const MaxInt = int64(MaxUint >> 1) 
