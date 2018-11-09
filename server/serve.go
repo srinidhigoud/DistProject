@@ -6,11 +6,11 @@ import (
 	rand "math/rand"
 	"net"
 	"time"
-
+	"math"
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/nyu-distributed-systems-fa18/lab-2-raft-pramitmallick/pb"
+	"github.com/nyu-distributed-systems-fa18/lab-2-raft-srinidhigoud/pb"
 )
 
 // Messages that can be passed from the Raft RPC server to the main loop for AppendEntries
