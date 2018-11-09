@@ -482,8 +482,8 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					myLastApplied += 1
 					toApply := myLog[myLastApplied]
 					opCmd := toApply.Cmd // ??
+					clientRequest, existsInMyMachine := clientReq_id_map[myLastApplied]
 					if myState == "3" {
-						clientRequest, existsInMyMachine := clientReq_id_map[myLastApplied]
 						if existsInMyMachine {
 							// To handle unwanted cases
 							s.HandleCommand(clientRequest, true) 
