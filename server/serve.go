@@ -222,17 +222,18 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					}
 					log.Printf("I'm a candidate %v - sent to %v peers", id, numberOfPeers)
 					restartTimer(timer, r, false)
-				} else {
-					// Send heartbeats
-					heartbeat := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex}
-					for p, c := range peerClients {
-						go func(c pb.RaftClient, p string) {
-							ret, err := c.AppendEntries(context.Background(), &heartbeat)
-							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
-						}(c, p)
-					}
-					restartTimer(timer, r, true)
-				}
+				} 
+				// else {
+				// 	// Send heartbeats
+				// 	heartbeat := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex}
+				// 	for p, c := range peerClients {
+				// 		go func(c pb.RaftClient, p string) {
+				// 			ret, err := c.AppendEntries(context.Background(), &heartbeat)
+				// 			appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
+				// 		}(c, p)
+				// 	}
+				// 	restartTimer(timer, r, true)
+				// }
 				// This will also take care of any pesky timeouts that happened while processing the operation.
 				
 			case op := <-s.C:
