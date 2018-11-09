@@ -51,8 +51,7 @@ func randomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 	if heartbeat{
 		const DurationMax = 4000
 		const DurationMin = 1000
-	}
-	else {
+	} else {
 		const DurationMax = 400
 		const DurationMin = 100
 	}
@@ -219,8 +218,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					}
 					log.Printf("I'm a candidate %v - sent to %v peers", id, numberOfPeers)
 					restartTimer(timer, r, false)
-				}
-				else {
+				} else {
 					// Send heartbeats
 					heartbeat := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex}
 					for p, c := range peerClients {
