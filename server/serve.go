@@ -193,13 +193,12 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	
 
 
-	
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	count_inf := 0
+ 	count_inf := int64(0)	
 	// Run forever handling inputs from various channels
 	for {
 		if count_inf%1000 == 0 {
 			log.Printf(count_inf)
+			log.Printf("%v",count_inf)
 		}
 		count_inf += 1
 		select {
