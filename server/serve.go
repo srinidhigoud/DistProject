@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "fmt"
+	"fmt"
 	"log"
 	rand "math/rand"
 	"net"
