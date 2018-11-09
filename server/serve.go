@@ -293,15 +293,17 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						} else {
 							if myLastLogIndex < leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm {
 								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
-							} else myLastLogIndex > leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm{
-								min_index := MaxInt
-								for _, entry := range ae_list {
-									if myLog[entry.Index].Term != entry.Term {
-										// delete everything after it
-										min_index = Min(min_index,entry.Index)
+							} else {
+								if myLastLogIndex > leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm{
+									min_index := MaxInt
+									for _, entry := range ae_list {
+										if myLog[entry.Index].Term != entry.Term {
+											// delete everything after it
+											min_index = Min(min_index,entry.Index)
+										}
 									}
+									myLog = myLog[:min_index]
 								}
-								myLog = myLog[:min_index]
 							}
 						}
 						currentTerm = ae.arg.Term // ?? here ??
