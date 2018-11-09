@@ -171,10 +171,13 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 		if err != nil {
 			log.Fatalf("Failed to connect to GRPC server %v", err)
 		}
-
 		peerClients[peer] = client
+		myNextIndex[peer] = -1
+		myMatchIndex[peer] = -1
 		log.Printf("Connected to %v", peer)
 	}
+	myMatchIndex[id] = -1
+	myNextIndex[id] = -1
 
 	type AppendResponse struct {
 		ret  *pb.AppendEntriesRet
