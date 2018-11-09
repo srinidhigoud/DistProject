@@ -175,10 +175,10 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	}
 
 	type AppendResponse struct {
-		len_ae int64 // length of append tries
 		ret  *pb.AppendEntriesRet
 		err  error
 		peer string
+		len_ae int64 // length of append tries
 	}
 
 	type VoteResponse struct {
@@ -290,12 +290,10 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						if myLastLogIndex == leaderPrevLogIndex  && myLog[myLastLogIndex].Term == leaderPrevLogTerm {
 							myLog = append( myLog, ae_list)
 							ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
-						}
-						else {
+						} else {
 							if myLastLogIndex < leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm {
 								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
-							}
-							else myLastLogIndex > leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm{
+							} else myLastLogIndex > leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm{
 								min_index := MaxInt
 								for _, entry := range ae_list {
 									if myLog[entry.Index].Term != entry.Term {
