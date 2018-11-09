@@ -195,12 +195,17 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+	count_inf := 0
 	// Run forever handling inputs from various channels
 	for {
+		if count_inf%1000 == 0 {
+			log.Printf(count_inf)
+		}
+		count_inf += 1
 		select {
 				
 			case <-timer.C:
+				log.Printf("Timeout wentoff")
 				// The timer went off.
 				if myState != "3" {
 					log.Printf("Timeout %v", id)
@@ -233,6 +238,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// This will also take care of any pesky timeouts that happened while processing the operation.
 				
 			case op := <-s.C:
+				log.Printf("We received an operation from a client")
 				// We received an operation from a client
 				// TODO: Figure out if you can actually handle the request here. If not use the Redirect result to send the
 				// client elsewhere.
@@ -261,6 +267,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 
 				// s.HandleCommand(op) //- last command?
 			case ae := <-raft.AppendChan:
+				log.Printf("We received an AppendEntries request from a Raft peer")
 				// We received an AppendEntries request from a Raft peer
 				// TODO figure out what to do here, what we do is entirely wrong.
 				// Can change to follower here as well from candidate
@@ -330,6 +337,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// This will also take care of any pesky timeouts that happened while processing the operation.
 				restartTimer(timer, r, false)
 			case vr := <-raft.VoteChan:
+				log.Printf("We received a RequestVote RPC from a raft peer")
 				// We received a RequestVote RPC from a raft peer
 				// TODO: Fix this.
 
@@ -370,6 +378,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false} // Should it be last call?
 			case vr := <-voteResponseChan:
 				// We received a response to a previou vote request.
+				log.Printf("We received a response to a previou vote request.")
 				// TODO: Fix this
 				if vr.err != nil {
 					// Do not do Fatalf here since the peer might be gone but we should survive.
@@ -412,6 +421,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					log.Printf("Peers %s granted %v term %v", vr.peer, vr.ret.VoteGranted, vr.ret.Term)
 				}
 			case ar := <-appendResponseChan:
+				log.Printf("We received a response to a previous AppendEntries RPC call")
 				// We received a response to a previous AppendEntries RPC call
 				follower := ar.peer
 				// followerTerm := ar.ret.Term
@@ -477,6 +487,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				log.Printf("Got append entries response from %v", ar.peer)
 
 			default:
+				log.Printf("Default")
 				// Apply here ??? If not leader maybe ?
 				if myCommitIndex > myLastApplied {
 					myLastApplied += 1
