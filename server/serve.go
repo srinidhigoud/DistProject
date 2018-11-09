@@ -205,7 +205,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 			case <-timer.C:
 				log.Printf("Timeout wentoff")
 				// The timer went off.
-				if id != myLeaderID {
+				if myState != "3" {
 					log.Printf("Timeout %v", id)
 					currentTerm += 1
 					vote_count = 1
@@ -242,7 +242,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// client elsewhere.
 				// TODO: Use Raft to make sure it is safe to actually run the command.
 
-				if id == myLeaderID {
+				if myState == "3" {
 					new_entry := pb.Entry{Term: currentTerm, Index: myLastLogIndex + 1, Cmd: &op.command}
 					myLog = append(myLog, &new_entry)
 					new_entry_list := []*pb.Entry{&new_entry}
