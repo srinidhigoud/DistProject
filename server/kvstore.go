@@ -103,26 +103,37 @@ func (s *KVStore) CasInternal(k string, v string, vn string) pb.Result {
 	}
 }
 
-func (s *KVStore) HandleCommand(op InputChannelType) {
+func (s *KVStore) HandleCommand(op InputChannelType, isLeader bool) {
 	switch c := op.command; c.Operation {
 	case pb.Op_GET:
 		arg := c.GetGet()
 		result := s.GetInternal(arg.Key)
-		op.response <- result
+		if isLeader {
+			op.response <- result
+		}
 	case pb.Op_SET:
 		arg := c.GetSet()
 		result := s.SetInternal(arg.Key, arg.Value)
-		op.response <- result
+		if isLeader {
+			op.response <- result
+		}
 	case pb.Op_CLEAR:
 		result := s.ClearInternal()
-		op.response <- result
+		if isLeader {
+			op.response <- result
+		}
 	case pb.Op_CAS:
 		arg := c.GetCas()
 		result := s.CasInternal(arg.Kv.Key, arg.Kv.Value, arg.Value.Value)
-		op.response <- result
+		if isLeader {
+			op.response <- result
+		}
 	default:
 		// Sending a blank response to just free things up, but we don't know how to make progress here.
-		op.response <- pb.Result{}
+		if isLeader {
+			op.response <- pb.Result{}
+		}
+		
 		log.Fatalf("Unrecognized operation %v", c)
 	}
 }
