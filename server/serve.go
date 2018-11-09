@@ -197,7 +197,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	// Run forever handling inputs from various channels
 	for {
 		if count_inf%1000 == 0 {
-			log.Printf("%v",count_inf)
+		//	log.Printf("%v",count_inf)
 		}
 		count_inf += 1
 		select {
@@ -486,7 +486,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				log.Printf("Got append entries response from %v", ar.peer)
 
 			default:
-				log.Printf("Default")
+				//log.Printf("Default")
 				// Apply here ??? If not leader maybe ?
 				if myCommitIndex > myLastApplied {
 					
