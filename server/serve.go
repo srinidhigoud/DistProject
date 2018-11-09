@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	_ "fmt"
 	"log"
 	rand "math/rand"
 	"net"
@@ -232,6 +232,8 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					for p, c := range peerClients {
 						go func(c pb.RaftClient, p string) {
 							ret, err := c.AppendEntries(context.Background(), &heartbeat)
+							_ = ret
+							_ = err
 							// appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
 						}(c, p)
 					}
@@ -419,6 +421,8 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									myNextIndex[p] = myLastLogIndex + 1
 									go func(c pb.RaftClient, p string) {
 										ret, err := c.AppendEntries(context.Background(), &heartbeat)
+										_ = ret
+										_ = err
 										// appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
 									}(c, p)
 								}
