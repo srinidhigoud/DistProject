@@ -133,7 +133,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	var myLog []*pb.Entry
 	currentTerm := int64(0)
 	myLastLogTerm := int64(0)
-	myLastLogIndex := int64(0)
+	myLastLogIndex := int64(-1)
 	//1-follower, 2-Candidate, 3-Leader
 	
 	
@@ -150,8 +150,8 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	// var opEntries []chan pb.Result
 	
 	// Volatile state on all servers:
-	myCommitIndex := int64(0)
-	myLastApplied := int64(0)
+	myCommitIndex := int64(-1)
+	myLastApplied := int64(-1)
 
 	// Volatile state on leaders:
 	// myNextIndex := []
@@ -222,18 +222,17 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					}
 					log.Printf("I'm a candidate %v - sent to %v peers", id, numberOfPeers)
 					restartTimer(timer, r, false)
-				} 
-				// else {
-				// 	// Send heartbeats
-				// 	heartbeat := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex}
-				// 	for p, c := range peerClients {
-				// 		go func(c pb.RaftClient, p string) {
-				// 			ret, err := c.AppendEntries(context.Background(), &heartbeat)
-				// 			appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
-				// 		}(c, p)
-				// 	}
-				// 	restartTimer(timer, r, true)
-				// }
+				} else {
+					// Send heartbeats
+					heartbeat := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex}
+					for p, c := range peerClients {
+						go func(c pb.RaftClient, p string) {
+							ret, err := c.AppendEntries(context.Background(), &heartbeat)
+							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
+						}(c, p)
+					}
+					restartTimer(timer, r, true)
+				}
 				// This will also take care of any pesky timeouts that happened while processing the operation.
 				
 			case op := <-s.C:
@@ -286,6 +285,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						myState = "1"
 						myLeaderID = ae.arg.LeaderID
 						log.Printf("All hail new leader %v in term %v (heartbeat)", myLeaderID,currentTerm)
+						// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 					}
 					// Otherwise disregard
 				} else {
@@ -293,31 +293,38 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					if ae.arg.Term < currentTerm {
 						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					} else {
-						if myLastLogIndex == leaderPrevLogIndex  && myLog[myLastLogIndex].Term == leaderPrevLogTerm {
+						if myLastLogIndex == -1 {
 							for _, entry := range ae_list {
 								myLog = append( myLog, entry)
 							}
-							
-							ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 						} else {
-							if myLastLogIndex < leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm {
-								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+							if myLastLogIndex == leaderPrevLogIndex  && myLog[myLastLogIndex].Term == leaderPrevLogTerm {
+								for _, entry := range ae_list {
+									myLog = append( myLog, entry)
+								}
+								
+								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 							} else {
-								if myLastLogIndex > leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm{
-									min_index := MaxInt
-									for _, entry := range ae_list {
-										if myLog[entry.Index].Term != entry.Term {
-											// delete everything after it
-											if entry.Index < min_index {
-												min_index = entry.Index
+								if myLastLogIndex < leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm {
+									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+								} else {
+									if myLastLogIndex > leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm{
+										min_index := MaxInt
+										for _, entry := range ae_list {
+											if myLog[entry.Index].Term != entry.Term {
+												// delete everything after it
+												if entry.Index < min_index {
+													min_index = entry.Index
+												}
+												
 											}
-											
 										}
+										myLog = myLog[:min_index]
 									}
-									myLog = myLog[:min_index]
 								}
 							}
 						}
+						
 						currentTerm = ae.arg.Term // ?? here ??
 						myState = "1" // ??
 						myLeaderID = ae.arg.LeaderID // ?? here ??
@@ -423,33 +430,34 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 			case ar := <-appendResponseChan:
 				log.Printf("We received a response to a previous AppendEntries RPC call")
 				// We received a response to a previous AppendEntries RPC call
-				follower := ar.peer
+				peer_index := ar.peer
 				// followerTerm := ar.ret.Term
-				followerAppendSuccess := ar.ret.Success // For decrementing myNextIndex and retrying
+				 // For decrementing myNextIndex and retrying
 				lenOfAppendedEntries := ar.len_ae
 				// operation := ar.oper
 				if ar.err != nil {
 					// Do not do Fatalf here since the peer might be gone but we should survive.
 					log.Printf("Error calling RPC %v", ar.err)
 					// keep retrying here - a failed follower node
-					retryLastLogIndex := myLog[myNextIndex[follower]].Index
-					retryLastLogTerm := myLog[myNextIndex[follower]].Term
-					replacingPlusNewEntries := myLog[myNextIndex[follower]:]
+					retryLastLogIndex := myLog[myNextIndex[peer_index]].Index
+					retryLastLogTerm := myLog[myNextIndex[peer_index]].Term
+					replacingPlusNewEntries := myLog[myNextIndex[peer_index]:]
 					retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
 
 					go func(c pb.RaftClient, p string) {
 						ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
 						appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
-					}(peerClients[follower], follower)
+					}(peerClients[peer_index], peer_index)
 
 				} else {
+					followerAppendSuccess := ar.ret.Success
 					if followerAppendSuccess {
 						// what the fuck? update myNextIndex and myMatchIndex
-						myMatchIndex[follower] = myLog[myNextIndex[follower]].Index + int64(lenOfAppendedEntries)
+						myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)
 						// Find a way to not add redundant entries' lengths
 
 						// myNextIndex update how?
-						myNextIndex[follower] = myMatchIndex[follower] + 1
+						myNextIndex[peer_index] = myMatchIndex[peer_index] + 1
 
 						// If there exists an N such that N > myCommitIndex, a majority
 						// of myMatchIndex[i] ≥ N, and log[N].term == currentTerm: set 
@@ -469,16 +477,16 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						myCommitIndex = nextMaxmyCommitIndex
 
 					} else {
-						myNextIndex[follower] -= 1
-						retryLastLogIndex := myLog[myNextIndex[follower]].Index
-						retryLastLogTerm := myLog[myNextIndex[follower]].Term
-						replacingPlusNewEntries := myLog[myNextIndex[follower]:]
+						myNextIndex[peer_index] -= 1
+						retryLastLogIndex := myLog[myNextIndex[peer_index]].Index
+						retryLastLogTerm := myLog[myNextIndex[peer_index]].Term
+						replacingPlusNewEntries := myLog[myNextIndex[peer_index]:]
 						retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
 
 						go func(c pb.RaftClient, p string) {
 							ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
 							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
-						}(peerClients[follower], follower)
+						}(peerClients[peer_index], peer_index)
 					}	
 				}
 
