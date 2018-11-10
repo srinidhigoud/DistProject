@@ -379,9 +379,11 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						suc = true
 						log.Printf("Vote granted succesfully")
 					} else {
+						log.Printf("Vote grant failed 1")
 						vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 					}
 				} else {
+					log.Printf("Vote grant failed 2")
 					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 				}
 				log.Printf("Exiting conditional check")
