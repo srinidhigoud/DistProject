@@ -222,9 +222,9 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							// ret, err := c.RequestVote(context.Background(), &pb.RequestVoteArgs{Term: 1, CandidateID: id})
 							ret, err := c.RequestVote(context.Background(), &pb.RequestVoteArgs{Term: currentTerm, CandidateID: id, LastLogIndex: myLastLogIndex, LasLogTerm: myLastLogTerm})
 							voteResponseChan <- VoteResponse{ret: ret, err: err, peer: p}
-							log.Printf("But now I entered timer time out thingy")
+							// log.Printf("But now I entered timer time out thingy")
 						}(c, p)
-						log.Printf("But now I exited timer time out thingy")
+						// log.Printf("But now I exited timer time out thingy")
 						// numberOfPeers += 1
 					}
 					log.Printf("I'm a candidate %v - sent to %v peers", id, numberOfPeers)
@@ -274,7 +274,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 
 				// s.HandleCommand(op) //- last command?
 			case ae := <-raft.AppendChan:
-				log.Printf("We received an AppendEntries request from a Raft peer")
+				// log.Printf("We received an AppendEntries request from a Raft peer")
 				// We received an AppendEntries request from a Raft peer
 				// TODO figure out what to do here, what we do is entirely wrong.
 				// Can change to follower here as well from candidate
@@ -352,7 +352,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// This will also take care of any pesky timeouts that happened while processing the operation.
 				restartTimer(timer, r, false)
 			case vr := <-raft.VoteChan:
-				log.Printf("We received a RequestVote RPC from a raft peer")
+				// log.Printf("We received a RequestVote RPC from a raft peer")
 				// We received a RequestVote RPC from a raft peer
 				// TODO: Fix this.
 
@@ -361,55 +361,55 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				candidateLastLogIndex := vr.arg.LastLogIndex
 				candidateLasLogTerm := vr.arg.LasLogTerm
 				suc := false
-				log.Printf("We received a RequestVote RPC and we are entering conditional check")
+				// log.Printf("We received a RequestVote RPC and we are entering conditional check")
 				if candidateTerm < currentTerm {
 					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
-					log.Printf("My term %v is bigger than candidate's term %v",currentTerm,candidateTerm)
+					// log.Printf("My term %v is bigger than candidate's term %v",currentTerm,candidateTerm)
 				} else {
 					if candidateTerm > currentTerm {
-						log.Printf("Candidate's term is bigger")
+						// log.Printf("Candidate's term is bigger")
 						votedFor = ""
 					}
 					currentTerm = candidateTerm
-					log.Printf("We are entering second conditional check")
+					// log.Printf("We are entering second conditional check")
 					if votedFor == "" || votedFor == candidateID {
 						if candidateLasLogTerm > myLastLogTerm || candidateLastLogIndex >= myLastLogIndex {
-							log.Printf("Vote to be granted succesfully")
+							// log.Printf("Vote to be granted succesfully")
 							vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: true}
 							votedFor = candidateID
 							suc = true
-							log.Printf("Vote granted succesfully")
+							// log.Printf("Vote granted succesfully")
 						} else {
-							log.Printf("Vote grant failed 1")
+							// log.Printf("Vote grant failed 1")
 							vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 						}
 					} else {
-						log.Printf("Vote grant failed 2")
+						// log.Printf("Vote grant failed 2")
 						vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 					}
 				}
 				
-				log.Printf("Exiting conditional check")
+				// log.Printf("Exiting conditional check")
 				myState = "1"
 				restartTimer(timer, r, false) // ??
 
-				log.Printf("Received vote request from %v", vr.arg.CandidateID)
+				// log.Printf("Received vote request from %v", vr.arg.CandidateID)
 				if suc {
 					log.Printf("I am follower %v -  votedFor %v", id, votedFor)
 					myLeaderID = votedFor
 				}
-				log.Printf("We received a RequestVote RPC from a raft peer")
+				// log.Printf("We received a RequestVote RPC from a raft peer")
 				// vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false} // Should it be last call?
 			case vr := <-voteResponseChan:
 				// We received a response to a previou vote request.
-				log.Printf("We received a response to a previous vote request.")
+				// log.Printf("We received a response to a previous vote request.")
 				// TODO: Fix this
 				if vr.err != nil {
 					// Do not do Fatalf here since the peer might be gone but we should survive.
 					log.Printf("Error calling RPC %v", vr.err)
 				} else {
 					// peerID := vr.peer
-					log.Printf("We entered no error and handling vote response at %v", id)
+					// log.Printf("We entered no error and handling vote response at %v", id)
 					peerVoteGranted := vr.ret.VoteGranted
 					peerTerm := vr.ret.Term
 					if peerTerm > currentTerm {
@@ -444,10 +444,10 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						}
 					}	
 
-					log.Printf("Got response to vote request from %v", vr.peer)
-					log.Printf("Peers %s granted %v term %v", vr.peer, vr.ret.VoteGranted, vr.ret.Term)
+					// log.Printf("Got response to vote request from %v", vr.peer)
+					// log.Printf("Peers %s granted %v term %v", vr.peer, vr.ret.VoteGranted, vr.ret.Term)
 				}
-				log.Printf("I am exiting response to a vote request")
+				// log.Printf("I am exiting response to a vote request")
 			case ar := <-appendResponseChan:
 				log.Printf("We received a response to a previous AppendEntries RPC call")
 				// We received a response to a previous AppendEntries RPC call
