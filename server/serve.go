@@ -279,7 +279,6 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				if myState == "3" {
 					
 					new_entry := pb.Entry{Term: currentTerm, Index: myLastLogIndex + 1, Cmd: &op.command}
-					clientRequests[newEntry.Index] = op
 					myLog = append(myLog, &new_entry)
 					new_entry_list := []*pb.Entry{&new_entry}
 					log.Printf("Leader received from a client")
