@@ -371,23 +371,24 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						votedFor = ""
 					}
 					currentTerm = candidateTerm
-				}
-				log.Printf("We are entering second conditional check")
-				if votedFor == "" || votedFor == candidateID {
-					if candidateLasLogTerm > myLastLogTerm || candidateLastLogIndex >= myLastLogIndex {
-						log.Printf("Vote to be granted succesfully")
-						vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: true}
-						votedFor = candidateID
-						suc = true
-						log.Printf("Vote granted succesfully")
+					log.Printf("We are entering second conditional check")
+					if votedFor == "" || votedFor == candidateID {
+						if candidateLasLogTerm > myLastLogTerm || candidateLastLogIndex >= myLastLogIndex {
+							log.Printf("Vote to be granted succesfully")
+							vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: true}
+							votedFor = candidateID
+							suc = true
+							log.Printf("Vote granted succesfully")
+						} else {
+							log.Printf("Vote grant failed 1")
+							vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
+						}
 					} else {
-						log.Printf("Vote grant failed 1")
+						log.Printf("Vote grant failed 2")
 						vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 					}
-				} else {
-					log.Printf("Vote grant failed 2")
-					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 				}
+				
 				log.Printf("Exiting conditional check")
 				myState = "1"
 				restartTimer(timer, r, false) // ??
