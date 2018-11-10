@@ -126,7 +126,7 @@ func (s *KVStore) HandleCommandLeader(op InputChannelType) {
 		log.Fatalf("Unrecognized operation %v", c)
 	}
 }
-func (s *KVStore) HandleCommandFollower(cmd Command) {
+func (s *KVStore) HandleCommandFollower(cmd command) {
 	switch c := cmd; c.Operation {
 	case pb.Op_GET:
 		arg := c.GetGet()
