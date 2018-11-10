@@ -375,6 +375,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				log.Printf("We are entering second conditional check")
 				if votedFor == "" || votedFor == candidateID {
 					if candidateLasLogTerm > myLastLogTerm || candidateLastLogIndex >= myLastLogIndex {
+						log.Printf("Vote to be granted succesfully")
 						vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: true}
 						votedFor = candidateID
 						suc = true
