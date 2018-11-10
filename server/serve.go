@@ -277,10 +277,12 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// TODO: Use Raft to make sure it is safe to actually run the command.
 
 				if myState == "3" {
-					log.Printf("Leader received from a client")
+					
 					new_entry := pb.Entry{Term: currentTerm, Index: myLastLogIndex + 1, Cmd: &op.command}
+					clientRequests[newEntry.Index] = op
 					myLog = append(myLog, &new_entry)
 					new_entry_list := []*pb.Entry{&new_entry}
+					log.Printf("Leader received from a client")
 					clientReq_id_map[new_entry.Index] = op
 					// cannot use &newEntries (type *[]pb.Entry) as type []*pb.Entry in field value // how to deal with this?
 					appendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex, Entries: new_entry_list}
