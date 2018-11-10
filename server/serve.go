@@ -222,6 +222,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							// ret, err := c.RequestVote(context.Background(), &pb.RequestVoteArgs{Term: 1, CandidateID: id})
 							ret, err := c.RequestVote(context.Background(), &pb.RequestVoteArgs{Term: currentTerm, CandidateID: id, LastLogIndex: myLastLogIndex, LasLogTerm: myLastLogTerm})
 							voteResponseChan <- VoteResponse{ret: ret, err: err, peer: p}
+							log.Printf("But now I entered timer time out thingy")
 						}(c, p)
 						// numberOfPeers += 1
 					}
