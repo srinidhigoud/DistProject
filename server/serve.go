@@ -531,6 +531,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 
 						} else {
 							myNextIndex[peer_index] -= 1
+							log.Printf("%v but %v",myNextIndex[peer_index], myLog[myNextIndex[peer_index]].Index)
 							retryLastLogIndex := myLog[myNextIndex[peer_index]].Index
 							retryLastLogTerm := myLog[myNextIndex[peer_index]].Term
 							replacingPlusNewEntries := myLog[myNextIndex[peer_index]:]
