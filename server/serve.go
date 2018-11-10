@@ -342,7 +342,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 							} else {
 								
-								bool edited := true
+								edited := true
 								for _, entry := range ae_list {
 									if entry.Index <= myLastLogIndex {
 										if myLog[entry.Index].Term != entry.Term{
