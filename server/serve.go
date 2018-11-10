@@ -195,12 +195,12 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 			log.Fatalf("Failed to connect to GRPC server %v", err)
 		}
 		peerClients[peer] = client
-		myNextIndex[peer] = -1
+		myNextIndex[peer] = 0
 		myMatchIndex[peer] = -1
 		log.Printf("Connected to %v", peer)
 	}
 	myMatchIndex[id] = -1
-	myNextIndex[id] = -1
+	myNextIndex[id] = 0
 
 	type AppendResponse struct {
 		ret  *pb.AppendEntriesRet
@@ -504,6 +504,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					if lenOfAppendedEntries > 0 {
 						followerAppendSuccess := ar.ret.Success
 						if followerAppendSuccess {
+							log.Printf("It was a successful append entry operation")
 							// what the fuck? update myNextIndex and myMatchIndex
 							myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)-1
 							// Find a way to not add redundant entries' lengths
