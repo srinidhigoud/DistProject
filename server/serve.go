@@ -331,6 +331,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					} else {
 						if myLastLogIndex == -1 {
+							log.Printf("Now appending entries into my log")
 							for _, entry := range ae_list {
 								myLog = append( myLog, entry)
 							}
