@@ -254,11 +254,11 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					restartTimer(timer, r, false)
 				} else {
 					// Send heartbeats
-					log.Printf("Sending heartbeats")
+					// log.Printf("Sending heartbeats")
 					heartbeat := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex}
 					for p, c := range peerClients {
 						go func(c pb.RaftClient, p string) {
-							log.Printf("Sending heartbeats to %v",p)
+							// log.Printf("Sending heartbeats to %v",p)
 							ret, err := c.AppendEntries(context.Background(), &heartbeat)
 							// _ = ret
 							// _ = err
@@ -300,7 +300,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 
 				// s.HandleCommand(op) //- last command?
 			case ae := <-raft.AppendChan:
-				// log.Printf("We received an AppendEntries request from a Raft peer")
+				log.Printf("We received an AppendEntries request from a Raft peer")
 				// We received an AppendEntries request from a Raft peer
 				// TODO figure out what to do here, what we do is entirely wrong.
 				// Can change to follower here as well from candidate
@@ -314,7 +314,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				} 
 				
 				if isHeartBeat {
-					log.Printf("Received heartbeat from %v", myLeaderID)
+					// log.Printf("Received heartbeat from %v", myLeaderID)
 					if ae.arg.Term > currentTerm {
 						currentTerm = ae.arg.Term
 						myState = "1"
