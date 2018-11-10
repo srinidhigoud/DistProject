@@ -546,6 +546,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 								}
 								retryLastLogIndex := myLog[retryNextIndex].Index - 1
 								replacingPlusNewEntries := myLog[retryNextIndex:]
+								log.Printf("%v,%v",retryLastLogIndex,retryNextIndex)
 								retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
 								log.Printf("It was not a successful append entry operation but successful call")
 								go func(c pb.RaftClient, p string) {
