@@ -392,7 +392,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false} // Should it be last call?
 			case vr := <-voteResponseChan:
 				// We received a response to a previou vote request.
-				log.Printf("We received a response to a previou vote request.")
+				log.Printf("We received a response to a previous vote request.")
 				// TODO: Fix this
 				if vr.err != nil {
 					// Do not do Fatalf here since the peer might be gone but we should survive.
@@ -437,6 +437,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					log.Printf("Got response to vote request from %v", vr.peer)
 					log.Printf("Peers %s granted %v term %v", vr.peer, vr.ret.VoteGranted, vr.ret.Term)
 				}
+				log.Printf("I am exiting response to a vote request")
 			case ar := <-appendResponseChan:
 				log.Printf("We received a response to a previous AppendEntries RPC call")
 				// We received a response to a previous AppendEntries RPC call
