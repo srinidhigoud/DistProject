@@ -48,12 +48,12 @@ func (r *Raft) RequestVote(ctx context.Context, arg *pb.RequestVoteArgs) (*pb.Re
 func randomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 	// Constant
 	if heartbeat{
-		const DurationMax = 4000
-		const DurationMin = 1000
-		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
-	} else {
 		const DurationMax = 400
 		const DurationMin = 100
+		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
+	} else {
+		const DurationMax = 4000
+		const DurationMin = 1000
 		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 	}
 	
@@ -207,7 +207,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 		select {
 				
 			case <-timer.C:
-				log.Printf("Timeout wentoff")
+				// log.Printf("Timeout wentoff")
 				// The timer went off.
 				if myState != "3" {
 					log.Printf("Timeout %v", id)
