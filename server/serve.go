@@ -324,7 +324,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						log.Printf("All hail new leader %v in term %v (heartbeat)", myLeaderID,currentTerm)
 						
 					}
-					ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+					// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 				} else {
 					log.Printf("Received append entry from %v", ae.arg.LeaderID)
 					if ae.arg.Term < currentTerm {
