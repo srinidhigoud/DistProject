@@ -364,8 +364,10 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				log.Printf("We received a RequestVote RPC and we are entering conditional check")
 				if candidateTerm < currentTerm {
 					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
+					log.Printf("My term is bigger")
 				} else {
 					if candidateTerm > currentTerm {
+						log.Printf("Candidate's term is bigger")
 						votedFor = ""
 					}
 					currentTerm = candidateTerm
@@ -375,13 +377,14 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: true}
 						votedFor = candidateID
 						suc = true
+						log.Printf("Vote granted succesfully")
 					} else {
 						vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 					}
 				} else {
 					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 				}
-				
+				log.Printf("Exiting conditional check")
 				myState = "1"
 				restartTimer(timer, r, false) // ??
 
