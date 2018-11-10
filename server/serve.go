@@ -364,7 +364,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				log.Printf("We received a RequestVote RPC and we are entering conditional check")
 				if candidateTerm < currentTerm {
 					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
-					log.Printf("My term is bigger")
+					log.Printf("My term %v is bigger than candidate's term %v",currentTerm,candidateTerm)
 				} else {
 					if candidateTerm > currentTerm {
 						log.Printf("Candidate's term is bigger")
