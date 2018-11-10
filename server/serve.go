@@ -322,9 +322,9 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						myState = "1"
 						myLeaderID = ae.arg.LeaderID
 						log.Printf("All hail new leader %v in term %v (heartbeat)", myLeaderID,currentTerm)
-						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+						
 					}
-					// Otherwise disregard
+					ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 				} else {
 					log.Printf("Received append entry from %v", ae.arg.LeaderID)
 					if ae.arg.Term < currentTerm {
@@ -566,6 +566,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					clientRequest, existsInMyMachine := clientReq_id_map[myLastApplied]
 					if myState == "3" {
 						if existsInMyMachine {
+							log.Printf("Handling command now")
 							// To handle unwanted cases
 							s.HandleCommand(clientRequest, true) 
 						}
