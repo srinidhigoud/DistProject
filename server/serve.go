@@ -363,7 +363,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				suc := false
 				log.Printf("We received a RequestVote RPC and we are entering conditional check")
 				if candidateTerm < currentTerm {
-					vr.response <- pb.RequestVoteRet{Term: currentTerm, Success: false}
+					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 					log.Printf("My term %v is bigger than candidate's term %v",currentTerm,candidateTerm)
 				} else {
 					if candidateTerm > currentTerm {
@@ -376,17 +376,17 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				if votedFor == "" || votedFor == candidateID {
 					if candidateLasLogTerm > myLastLogTerm || candidateLastLogIndex >= myLastLogIndex {
 						log.Printf("Vote to be granted succesfully")
-						vr.response <- pb.RequestVoteRet{Term: currentTerm, Success: true}
+						vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: true}
 						votedFor = candidateID
 						suc = true
 						log.Printf("Vote granted succesfully")
 					} else {
 						log.Printf("Vote grant failed 1")
-						vr.response <- pb.RequestVoteRet{Term: currentTerm, Success: false}
+						vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 					}
 				} else {
 					log.Printf("Vote grant failed 2")
-					vr.response <- pb.RequestVoteRet{Term: currentTerm, Success: false}
+					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 				}
 				log.Printf("Exiting conditional check")
 				myState = "1"
@@ -409,7 +409,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				} else {
 					// peerID := vr.peer
 					log.Printf("We entered no error and handling vote response at %v", id)
-					peerVoteGranted := vr.ret.Success
+					peerVoteGranted := vr.ret.VoteGranted
 					peerTerm := vr.ret.Term
 					if peerTerm > currentTerm {
 						log.Printf("Stepping down to follower %v - received response of term %v, greater than my term %v", id, peerTerm, currentTerm)
@@ -444,7 +444,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					}	
 
 					log.Printf("Got response to vote request from %v", vr.peer)
-					log.Printf("Peers %s granted %v term %v", vr.peer, vr.ret.Success, vr.ret.Term)
+					log.Printf("Peers %s granted %v term %v", vr.peer, vr.ret.VoteGranted, vr.ret.Term)
 				}
 				log.Printf("I am exiting response to a vote request")
 			case ar := <-appendResponseChan:
