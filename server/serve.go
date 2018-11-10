@@ -292,7 +292,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(new_entry_list))}
 						}(c, p)
 					}
-					myLastLogIndex = myLastLogIndex + 1 // here?
+					myLastLogIndex += int64(len(new_entry_list)) // here?
 				} else {
 					// 	Reply with most recent leader's address // 
 					res := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: myLeaderID}}}
