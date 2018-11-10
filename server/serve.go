@@ -234,6 +234,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					heartbeat := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex}
 					for p, c := range peerClients {
 						go func(c pb.RaftClient, p string) {
+							log.Printf("Sending heartbeats to %v",p)
 							ret, err := c.AppendEntries(context.Background(), &heartbeat)
 							// _ = ret
 							// _ = err
