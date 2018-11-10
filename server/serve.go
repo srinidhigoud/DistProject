@@ -300,7 +300,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 
 				// s.HandleCommand(op) //- last command?
 			case ae := <-raft.AppendChan:
-				log.Printf("We received an AppendEntries request from a Raft peer")
+				
 				// We received an AppendEntries request from a Raft peer
 				// TODO figure out what to do here, what we do is entirely wrong.
 				// Can change to follower here as well from candidate
