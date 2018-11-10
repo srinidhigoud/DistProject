@@ -224,6 +224,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							voteResponseChan <- VoteResponse{ret: ret, err: err, peer: p}
 							log.Printf("But now I entered timer time out thingy")
 						}(c, p)
+						log.Printf("But now I exited timer time out thingy")
 						// numberOfPeers += 1
 					}
 					log.Printf("I'm a candidate %v - sent to %v peers", id, numberOfPeers)
