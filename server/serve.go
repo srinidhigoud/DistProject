@@ -341,22 +341,28 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							if myLastLogIndex < leaderPrevLogIndex || myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
 								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 							} else {
-								
-								edited := true
-								for _, entry := range ae_list {
-									if entry.Index <= myLastLogIndex {
-										if myLog[entry.Index].Term != entry.Term{
-											edited = false
-											myLog = myLog[:entry.Index]
+								if myLastLogIndex >= leaderPrevLogIndex {
+									for _, entry := range ae_list {
+										if entry.Index <= myLastLogIndex {
+											if myLog[entry.Index].Term != entry.Term{
+												myLog = myLog[:entry.Index]
+												myLog = append(myLog, entry)
+												myLastLogIndex = int64(len(myLog) - 1)
+											}	
+										} else {
 											myLog = append(myLog, entry)
-											myLastLogIndex = int64(len(myLog) - 1)
-										}	
-									} else {
-										edited = false
-										myLog = append(myLog, entry)
+										}
 									}
+									if myLog[leaderPrevLogIndex].Term == leaderPrevLogTerm {
+										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+									} else {
+										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+									}
+									
+								} else {
+									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 								}
-								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: edited}
+								
 							}
 						}
 						
