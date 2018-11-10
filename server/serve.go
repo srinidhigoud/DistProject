@@ -328,6 +328,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				} else {
 					log.Printf("Received append entry from %v", ae.arg.LeaderID)
 					if ae.arg.Term < currentTerm {
+						log.Printf("failed append entry as my term is bigger")
 						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					} else {
 						if myLastLogIndex == -1 {
@@ -335,6 +336,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							for _, entry := range ae_list {
 								myLog = append( myLog, entry)
 							}
+							ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 						} else {
 							if myLastLogIndex == leaderPrevLogIndex  && myLog[myLastLogIndex].Term == leaderPrevLogTerm {
 								for _, entry := range ae_list {
@@ -376,7 +378,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						}
 					}
 				}
-
+				log.Printf("Done appending")
 				// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 				// s.HandleCommand(op) - // here?
 				// This will also take care of any pesky timeouts that happened while processing the operation.
