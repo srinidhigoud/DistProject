@@ -378,7 +378,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						}
 					}
 				}
-				log.Printf("Done appending")
+				// log.Printf("Done appending")
 				// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 				// s.HandleCommand(op) - // here?
 				// This will also take care of any pesky timeouts that happened while processing the operation.
