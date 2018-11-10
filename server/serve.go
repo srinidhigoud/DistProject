@@ -48,12 +48,12 @@ func (r *Raft) RequestVote(ctx context.Context, arg *pb.RequestVoteArgs) (*pb.Re
 func randomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 	// Constant
 	if heartbeat{
-		const DurationMax = 400
-		const DurationMin = 100
-		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
-	} else {
 		const DurationMax = 4000
 		const DurationMin = 1000
+		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
+	} else {
+		const DurationMax = 40000
+		const DurationMin = 10000
 		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 	}
 	
@@ -109,6 +109,29 @@ func connectToPeer(peer string) (pb.RaftClient, error) {
 		return pb.NewRaftClient(nil), err
 	}
 	return pb.NewRaftClient(conn), nil
+}
+
+
+func printLogEntries(logEntries []*pb.Entry) {
+	// myLogs := ""
+	for idx, entry := range logEntries {
+		// entryLog := "(" + string(entry.Index) + ", " + string(entry.Term) + ")"
+		ecmd := ""
+		log.Printf("My logs - ")	
+		switch c := entry.Cmd; 
+		c.Operation {
+		case pb.Op_GET:
+			ecmd = "Op_GET"
+		case pb.Op_SET:
+			ecmd = "Op_SET"
+		case pb.Op_CLEAR:
+			ecmd = "Op_CLEAR"
+		case pb.Op_CAS:
+			ecmd = "Op_CAS"
+		}
+		log.Printf("idx %v log : Index %v Term %v Cmd %v", idx, entry.Index, entry.Term, ecmd)	
+		// myLogs = entryLog + " " + myLogs
+	}
 }
 
 
@@ -321,6 +344,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 								} else {
 									if myLastLogIndex > leaderPrevLogIndex || myLog[myLastLogIndex].Term != leaderPrevLogTerm{
+										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 										min_index := MaxInt
 										for _, entry := range ae_list {
 											if myLog[entry.Index].Term != entry.Term {
