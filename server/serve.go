@@ -217,6 +217,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					myState = "2"
 					for p, c := range peerClients {
 						// Send in parallel so we don't wait for each client.
+						log.Printf("requesting from %v", p)
 						go func(c pb.RaftClient, p string) {
 							// ret, err := c.RequestVote(context.Background(), &pb.RequestVoteArgs{Term: 1, CandidateID: id})
 							ret, err := c.RequestVote(context.Background(), &pb.RequestVoteArgs{Term: currentTerm, CandidateID: id, LastLogIndex: myLastLogIndex, LasLogTerm: myLastLogTerm})
