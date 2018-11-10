@@ -346,13 +346,13 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 								for _, entry := range ae_list {
 									if entry.Index <= myLastLogIndex {
 										if myLog[entry.Index].Term != entry.Term{
-											edited := false
+											edited = false
 											myLog = myLog[:entry.Index]
 											myLog = append(myLog, entry)
 											myLastLogIndex = int64(len(myLog) - 1)
 										}	
 									} else {
-										edited := false
+										edited = false
 										myLog = append(myLog, entry)
 									}
 								}
