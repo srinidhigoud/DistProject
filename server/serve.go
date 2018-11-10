@@ -352,7 +352,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// This will also take care of any pesky timeouts that happened while processing the operation.
 				restartTimer(timer, r, false)
 			case vr := <-raft.VoteChan:
-				//log.Printf("We received a RequestVote RPC from a raft peer")
+				log.Printf("We received a RequestVote RPC from a raft peer")
 				// We received a RequestVote RPC from a raft peer
 				// TODO: Fix this.
 
@@ -361,7 +361,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				candidateLastLogIndex := vr.arg.LastLogIndex
 				candidateLasLogTerm := vr.arg.LasLogTerm
 				suc := false
-
+				log.Printf("We received a RequestVote RPC and we are entering conditional check")
 				if candidateTerm < currentTerm {
 					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 				} else {
