@@ -130,15 +130,15 @@ func (s *KVStore) HandleCommandFollower(opcmd *pb.Command) {
 	switch c := opcmd; c.Operation {
 	case pb.Op_GET:
 		arg := c.GetGet()
-		result := s.GetInternal(arg.Key)
+		_ = s.GetInternal(arg.Key)
 	case pb.Op_SET:
 		arg := c.GetSet()
-		result := s.SetInternal(arg.Key, arg.Value)
+		_ = s.SetInternal(arg.Key, arg.Value)
 	case pb.Op_CLEAR:
-		result := s.ClearInternal()
+		_ = s.ClearInternal()
 	case pb.Op_CAS:
 		arg := c.GetCas()
-		result := s.CasInternal(arg.Kv.Key, arg.Kv.Value, arg.Value.Value)
+		_ = s.CasInternal(arg.Kv.Key, arg.Kv.Value, arg.Value.Value)
 	default:
 		// Sending a blank response to just free things up, but we don't know how to make progress here.
 		log.Fatalf("Unrecognized operation %v", c)
