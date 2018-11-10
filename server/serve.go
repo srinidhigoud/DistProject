@@ -254,6 +254,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// TODO: Use Raft to make sure it is safe to actually run the command.
 
 				if myState == "3" {
+					log.Printf("Leader received from a client")
 					new_entry := pb.Entry{Term: currentTerm, Index: myLastLogIndex + 1, Cmd: &op.command}
 					myLog = append(myLog, &new_entry)
 					new_entry_list := []*pb.Entry{&new_entry}
@@ -266,7 +267,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(new_entry_list))}
 						}(c, p)
 					}
-					myLastLogIndex = myLastLogIndex + int64(len(new_entry_list)) // here?
+					myLastLogIndex = myLastLogIndex + 1 // here?
 				} else {
 					// 	Reply with most recent leader's address // 
 					res := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: myLeaderID}}}
