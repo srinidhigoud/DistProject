@@ -398,6 +398,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					log.Printf("Error calling RPC %v", vr.err)
 				} else {
 					// peerID := vr.peer
+					log.Printf("We entered no error and handling vote response at %v", id)
 					peerVoteGranted := vr.ret.VoteGranted
 					peerTerm := vr.ret.Term
 					if peerTerm > currentTerm {
