@@ -520,6 +520,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							// If there exists an N such that N > myCommitIndex, a majority
 							// of myMatchIndex[i] ≥ N, and log[N].term == currentTerm: set 
 							// myCommitIndex = N (§5.3, §5.4).	
+							log.Printf("Now checking commit indices")
 							nextMaxmyCommitIndex := myCommitIndex
 							for i := myCommitIndex; i <= myLastLogIndex; i++ {
 								peer_countReplicatedUptoi := 0
