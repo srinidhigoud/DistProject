@@ -562,7 +562,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						log.Printf("It was not a successful append entry operation")
 						myNextIndex[peer_index] -= 1
 						
-						// log.Printf("1 %v,%v",myNextIndex[peer_index],myLastLogIndex)
+						log.Printf("1 %v,%v",myNextIndex[peer_index],myLastLogIndex)
 						if myNextIndex[peer_index] <= myLastLogIndex && len(myLog) > 0 {
 							// retryNextIndex := int64(0)
 							retryNextIndex := myNextIndex[peer_index]
