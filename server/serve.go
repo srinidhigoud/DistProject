@@ -324,6 +324,9 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						myLeaderID = ae.arg.LeaderID
 						log.Printf("All hail new leader %v in term %v (heartbeat)", myLeaderID,currentTerm)
 					}
+					if myLastLogIndex < leaderPrevLogIndex{
+						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+					}
 					if myLastLogIndex < leaderCommit {
 						myCommitIndex = myLastLogIndex
 					} else {
@@ -515,75 +518,72 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					
 
 				} else {
-					if lenOfAppendedEntries > 0 {
-						followerAppendSuccess := ar.ret.Success
-						if followerAppendSuccess {
-							log.Printf("It was a successful append entry operation")
-							// what the fuck? update myNextIndex and myMatchIndex
-							log.Printf("for peer %v: %v, %v, %v",peer_index, myNextIndex[peer_index],len(myLog), myLastLogIndex)
-							myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)-1
-							// Find a way to not add redundant entries' lengths
+					followerAppendSuccess := ar.ret.Success						
+					if followerAppendSuccess {
+						log.Printf("It was a successful append entry operation")
+						// what the fuck? update myNextIndex and myMatchIndex
+						log.Printf("for peer %v: %v, %v, %v",peer_index, myNextIndex[peer_index],len(myLog), myLastLogIndex)
+						myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)-1
+						// Find a way to not add redundant entries' lengths
 
-							// myNextIndex update how?
-							myNextIndex[peer_index] = myMatchIndex[peer_index] + 1
+						// myNextIndex update how?
+						myNextIndex[peer_index] = myMatchIndex[peer_index] + 1
 
-							// If there exists an N such that N > myCommitIndex, a majority
-							// of myMatchIndex[i] ≥ N, and log[N].term == currentTerm: set 
-							// myCommitIndex = N (§5.3, §5.4).	
-							log.Printf("Now checking commit indices")
-							nextMaxmyCommitIndex := myCommitIndex
-							for i := myCommitIndex; i <= myLastLogIndex; i++ {
-								peer_countReplicatedUptoi := 0
-								for _, followermyMatchIndex := range myMatchIndex {
-									if followermyMatchIndex >= i {
-										peer_countReplicatedUptoi += 1
-									}
-								}
-								if peer_countReplicatedUptoi > peer_count/2 {
-									nextMaxmyCommitIndex = i
+						// If there exists an N such that N > myCommitIndex, a majority
+						// of myMatchIndex[i] ≥ N, and log[N].term == currentTerm: set 
+						// myCommitIndex = N (§5.3, §5.4).	
+						log.Printf("Now checking commit indices")
+						nextMaxmyCommitIndex := myCommitIndex
+						for i := myCommitIndex; i <= myLastLogIndex; i++ {
+							peer_countReplicatedUptoi := 0
+							for _, followermyMatchIndex := range myMatchIndex {
+								if followermyMatchIndex >= i {
+									peer_countReplicatedUptoi += 1
 								}
 							}
-							myCommitIndex = nextMaxmyCommitIndex
-
-						} else {
-							log.Printf("It was not a successful append entry operation")
-							// log.Printf("1 %v,%v",myNextIndex[peer_index],myLastLogIndex)
-							if myNextIndex[peer_index] <= myLastLogIndex && len(myLog) > 0 {
-								retryNextIndex := int64(0)
-								retryLastLogTerm := int64(0)
-								if myNextIndex[peer_index] >=0 {
-									retryNextIndex = myNextIndex[peer_index]
-									retryLastLogTerm = myLog[retryNextIndex].Term
-								}
-								// log.Printf("2 %v,%v",retryLastLogTerm,retryNextIndex)
-								retryLastLogIndex := myLog[retryNextIndex].Index - 1
-								replacingPlusNewEntries := myLog[retryNextIndex:]
-								
-								retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
-								log.Printf("It was not a successful append entry operation but successful call")
-								go func(c pb.RaftClient, p string) {
-									ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
-									appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
-								}(peerClients[peer_index], peer_index)
-								// log.Printf("iAmStillRunning %v Peer back online - Retrying append entries to follower - %v", iAmStillRunning, peer_index)
+							if peer_countReplicatedUptoi > peer_count/2 {
+								nextMaxmyCommitIndex = i
 							}
-							
-
-							// myNextIndex[peer_index] -= 1
-							// log.Printf("%v but %v",myNextIndex[peer_index], myLog[myNextIndex[peer_index]].Index)
-							// retryLastLogIndex := myLog[myNextIndex[peer_index]].Index
-							// retryLastLogTerm := myLog[myNextIndex[peer_index]].Term
-							// replacingPlusNewEntries := myLog[myNextIndex[peer_index]:]
-							// retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
-
-							// go func(c pb.RaftClient, p string) {
-							// 	ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
-							// 	appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
-							// }(peerClients[peer_index], peer_index)
 						}
+						myCommitIndex = nextMaxmyCommitIndex
+
 					} else {
-						log.Printf("Received a successful heartbeat response from %v",peer_index)
+						log.Printf("It was not a successful append entry operation")
+						// log.Printf("1 %v,%v",myNextIndex[peer_index],myLastLogIndex)
+						if myNextIndex[peer_index] <= myLastLogIndex && len(myLog) > 0 {
+							retryNextIndex := int64(0)
+							retryLastLogTerm := int64(0)
+							if myNextIndex[peer_index] >=0 {
+								retryNextIndex = myNextIndex[peer_index]
+								retryLastLogTerm = myLog[retryNextIndex].Term
+							}
+							// log.Printf("2 %v,%v",retryLastLogTerm,retryNextIndex)
+							retryLastLogIndex := myLog[retryNextIndex].Index - 1
+							replacingPlusNewEntries := myLog[retryNextIndex:]
+							
+							retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
+							log.Printf("It was not a successful append entry operation but successful call")
+							go func(c pb.RaftClient, p string) {
+								ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
+								appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
+							}(peerClients[peer_index], peer_index)
+							// log.Printf("iAmStillRunning %v Peer back online - Retrying append entries to follower - %v", iAmStillRunning, peer_index)
+						}
+						
+
+						// myNextIndex[peer_index] -= 1
+						// log.Printf("%v but %v",myNextIndex[peer_index], myLog[myNextIndex[peer_index]].Index)
+						// retryLastLogIndex := myLog[myNextIndex[peer_index]].Index
+						// retryLastLogTerm := myLog[myNextIndex[peer_index]].Term
+						// replacingPlusNewEntries := myLog[myNextIndex[peer_index]:]
+						// retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
+
+						// go func(c pb.RaftClient, p string) {
+						// 	ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
+						// 	appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
+						// }(peerClients[peer_index], peer_index)
 					}
+					
 					log.Printf("Got append entries response from %v", ar.peer)	
 				}
 
