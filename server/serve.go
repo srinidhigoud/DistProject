@@ -325,6 +325,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						log.Printf("All hail new leader %v in term %v (heartbeat)", myLeaderID,currentTerm)
 					}
 					if myLastLogIndex < leaderPrevLogIndex{
+						log.Printf("failed because of heartbeat")
 						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					}
 					if myLastLogIndex < leaderCommit {
@@ -341,6 +342,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					} else {
 						if myLastLogIndex < leaderPrevLogIndex {
+							log.Printf("failed because leader has lengthier log")
 							ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 						} else {
 							if myLastLogIndex > leaderPrevLogIndex {
@@ -363,6 +365,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 								} else {
 									if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
+										log.Printf("failed because terms not equaled")
 										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 									} else {
 										for _, entry := range ae_list {
@@ -373,6 +376,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 								}
 								
 							} else {
+								log.Printf("failed because of default case")
 								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 							}
 						}
@@ -559,30 +563,33 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						
 
 					} else {
-						log.Printf("It was not a successful append entry operation")
+						if ar.ret.Term < currentTerm{
+							log.Printf("It was not a successful append entry operation")
 						
 						// log.Printf("1 %v,%v",myNextIndex[peer_index],myLastLogIndex)
-						if myNextIndex[peer_index] <= myLastLogIndex && len(myLog) > 0 {
-							if lenOfAppendedEntries>0 && myNextIndex[peer_index] > 0{
-								// myNextIndex[peer_index] -= 1
+							if myNextIndex[peer_index] <= myLastLogIndex && len(myLog) > 0 {
+								if lenOfAppendedEntries>0 && myNextIndex[peer_index] > 0{
+									// myNextIndex[peer_index] -= 1
+								}
+								retryNextIndex := myNextIndex[peer_index]
+								retryLastLogTerm := int64(0)
+								if retryNextIndex >=0 {
+									retryLastLogTerm = myLog[retryNextIndex].Term
+								}
+								// log.Printf("2 %v,%v",retryLastLogTerm,retryNextIndex)
+								retryLastLogIndex := myLog[retryNextIndex].Index - 1
+								replacingPlusNewEntries := myLog[retryNextIndex:]
+								
+								retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
+								log.Printf("It was not a successful append entry operation but successful call")
+								go func(c pb.RaftClient, p string) {
+									ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
+									appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
+								}(peerClients[peer_index], peer_index)
+								// log.Printf("iAmStillRunning %v Peer back online - Retrying append entries to follower - %v", iAmStillRunning, peer_index)
 							}
-							retryNextIndex := myNextIndex[peer_index]
-							retryLastLogTerm := int64(0)
-							if retryNextIndex >=0 {
-								retryLastLogTerm = myLog[retryNextIndex].Term
-							}
-							// log.Printf("2 %v,%v",retryLastLogTerm,retryNextIndex)
-							retryLastLogIndex := myLog[retryNextIndex].Index - 1
-							replacingPlusNewEntries := myLog[retryNextIndex:]
-							
-							retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
-							log.Printf("It was not a successful append entry operation but successful call")
-							go func(c pb.RaftClient, p string) {
-								ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
-								appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
-							}(peerClients[peer_index], peer_index)
-							// log.Printf("iAmStillRunning %v Peer back online - Retrying append entries to follower - %v", iAmStillRunning, peer_index)
 						}
+						
 						
 
 						// myNextIndex[peer_index] -= 1
