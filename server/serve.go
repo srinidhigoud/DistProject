@@ -366,7 +366,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 								} else {
 									if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
-										log.Printf("failed because terms not equaled")
+										log.Printf("failed because terms not equaled for length of %v", len(ae_list))
 										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 									} else {
 										for _, entry := range ae_list {
