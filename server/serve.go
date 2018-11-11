@@ -347,7 +347,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							log.Printf("failed because leader has lengthier log : my last log index %v, leader prev log index %v",myLastLogIndex, leaderPrevLogIndex)
 							ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 						} else {
-							if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm{
+							if leaderPrevLogIndex!= -1 && myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm{
 								log.Printf("Failed because terms are unequal")
 								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 							} else {
