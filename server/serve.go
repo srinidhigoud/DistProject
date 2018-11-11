@@ -317,7 +317,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				} 
 				
 				if isHeartBeat {
-					log.Printf("Received heartbeat from %v", myLeaderID)
+					// log.Printf("Received heartbeat from %v", myLeaderID)
 					if ae.arg.Term > currentTerm {
 						currentTerm = ae.arg.Term
 						myState = "1"
