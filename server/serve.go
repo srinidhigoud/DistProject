@@ -340,39 +340,31 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						log.Printf("failed append entry as my term is bigger")
 						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					} else {
-						if myLastLogIndex == -1 {
-							log.Printf("Now appending entries into my log")
-							for _, entry := range ae_list {
-								myLog = append( myLog, entry)
-							}
-							ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+						if myLastLogIndex < leaderPrevLogIndex {
+							ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 						} else {
-							if myLastLogIndex < leaderPrevLogIndex {
-								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
-							} else {
-								if myLastLogIndex > leaderPrevLogIndex {
-									for _, entry := range ae_list {
-										if entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
-											myLog = myLog[:entry.Index]
-											break
-											// myLog = append(myLog, entry)
-											// myLastLogIndex = int64(len(myLog) - 1)
-										}	
-									}
-									myLastLogIndex = int64(len(myLog) - 1)
-								} 
-								if myLastLogIndex == leaderPrevLogIndex {
-									if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
-										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
-									} else {
-										for _, entry := range ae_list {
-											myLog = append(myLog, entry)
-										}
-										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+							if myLastLogIndex > leaderPrevLogIndex {
+								for _, entry := range ae_list {
+									if entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
+										myLog = myLog[:entry.Index]
+										break
+										// myLog = append(myLog, entry)
+										// myLastLogIndex = int64(len(myLog) - 1)
 									}	
-								} else {
-									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 								}
+								myLastLogIndex = int64(len(myLog) - 1)
+							} 
+							if myLastLogIndex == leaderPrevLogIndex {
+								if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
+									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+								} else {
+									for _, entry := range ae_list {
+										myLog = append(myLog, entry)
+									}
+									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+								}	
+							} else {
+								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 							}
 						}
 						
