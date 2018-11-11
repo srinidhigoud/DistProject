@@ -518,7 +518,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						if followerAppendSuccess {
 							log.Printf("It was a successful append entry operation")
 							// what the fuck? update myNextIndex and myMatchIndex
-							log.Printf("%v, %v, %v",myNextIndex[peer_index],len(myLog), myLastLogIndex)
+							log.Printf("for peer %v: %v, %v, %v",peer_index, myNextIndex[peer_index],len(myLog), myLastLogIndex)
 							myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)-1
 							// Find a way to not add redundant entries' lengths
 
