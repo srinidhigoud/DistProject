@@ -533,19 +533,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						// of myMatchIndex[i] ≥ N, and log[N].term == currentTerm: set 
 						// myCommitIndex = N (§5.3, §5.4).	
 						log.Printf("Now checking commit indices")
-						nextMaxmyCommitIndex := myCommitIndex
-						for i := myCommitIndex; i <= myLastLogIndex; i++ {
-							peer_countReplicatedUptoi := 0
-							for _, followermyMatchIndex := range myMatchIndex {
-								if followermyMatchIndex >= i {
-									peer_countReplicatedUptoi += 1
-								}
-							}
-							if peer_countReplicatedUptoi > peer_count/2 {
-								nextMaxmyCommitIndex = i
-							}
-						}
-						myCommitIndex = nextMaxmyCommitIndex
+						
 
 					} else {
 						log.Printf("It was not a successful append entry operation")
@@ -583,7 +571,19 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						// 	appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
 						// }(peerClients[peer_index], peer_index)
 					}
-					
+					nextMaxmyCommitIndex := myCommitIndex
+					for i := myCommitIndex; i <= myLastLogIndex; i++ {
+						peer_countReplicatedUptoi := 0
+						for _, followermyMatchIndex := range myMatchIndex {
+							if followermyMatchIndex >= i {
+								peer_countReplicatedUptoi += 1
+							}
+						}
+						if peer_countReplicatedUptoi > peer_count/2 {
+							nextMaxmyCommitIndex = i
+						}
+					}
+					myCommitIndex = nextMaxmyCommitIndex
 					log.Printf("Got append entries response from %v", ar.peer)	
 				}
 
