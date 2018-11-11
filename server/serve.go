@@ -293,6 +293,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						}(c, p)
 					}
 					myLastLogIndex += int64(len(new_entry_list)) // here?
+					myLastLogTerm = currentTerm
 					printLogEntries(myLog)
 				} else {
 					// 	Reply with most recent leader's address // 
@@ -366,7 +367,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 								} else {
 									if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
-										log.Printf("failed because terms not equaled for length of %v", len(ae_list))
+										log.Printf("failed because terms not equaled for length of %v, my term %v, leader prev term %v", len(ae_list),myLog[leaderPrevLogIndex].Term,leaderPrevLogTerm)
 										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 									} else {
 										for _, entry := range ae_list {
