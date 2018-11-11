@@ -376,12 +376,16 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 							}
 						}
-						
 						currentTerm = ae.arg.Term // ?? here ??
 						myState = "1" // ??
 						myLeaderID = ae.arg.LeaderID // ?? here ??
 						myLastLogIndex = int64(len(myLog) - 1)
-						myLastLogTerm = myLog[myLastLogIndex].Term
+						if len(myLog) > 0{
+							myLastLogTerm = myLog[myLastLogIndex].Term
+						} else {
+							myLastLogTerm = -1
+						}
+						
 						if leaderCommit < myLastLogIndex {
 							myCommitIndex = leaderCommit
 						} else {
