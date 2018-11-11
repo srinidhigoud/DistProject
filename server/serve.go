@@ -329,7 +329,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					} else {
 						myCommitIndex = leaderCommit
 					}
-					log.Printf("My commit index is %v, my leader's commit index is %v",myCommitIndex, leaderCommit)
+					// log.Printf("My commit index is %v, my leader's commit index is %v",myCommitIndex, leaderCommit)
 					// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 				} else {
 					log.Printf("Received append entry from %v", ae.arg.LeaderID)
@@ -383,7 +383,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						} else {
 							myCommitIndex = myLastLogIndex
 						}
-						log.Printf("My commit index is %v, my leader's commit index is %v",myCommitIndex, leaderCommit)
+						// log.Printf("My commit index is %v, my leader's commit index is %v",myCommitIndex, leaderCommit)
 					}
 					printLogEntries(myLog)
 				}
