@@ -286,7 +286,6 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					// cannot use &newEntries (type *[]pb.Entry) as type []*pb.Entry in field value // how to deal with this?
 					appendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex, Entries: new_entry_list}
 					for p, c := range peerClients {
-						myNextIndex[p] = 0
 						log.Printf("Sending append entries to %v", p)
 						go func(c pb.RaftClient, p string) {
 							ret, err := c.AppendEntries(context.Background(), &appendEntry)
@@ -349,7 +348,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						} else {
 							if leaderPrevLogIndex != -1 && myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm{
 								log.Printf("Failed because terms are unequal")
-								// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 							} else {
 								if myLastLogIndex > leaderPrevLogIndex {
 									for _, entry := range ae_list {
