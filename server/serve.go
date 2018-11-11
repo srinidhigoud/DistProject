@@ -48,12 +48,12 @@ func (r *Raft) RequestVote(ctx context.Context, arg *pb.RequestVoteArgs) (*pb.Re
 func randomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 	// Constant
 	if heartbeat{
-		const DurationMax = 4000
-		const DurationMin = 1000
+		const DurationMax = 400
+		const DurationMin = 100
 		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 	} else {
-		const DurationMax = 40000
-		const DurationMin = 10000
+		const DurationMax = 4000
+		const DurationMin = 1000
 		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 	}
 	
@@ -325,14 +325,14 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						log.Printf("All hail new leader %v in term %v (heartbeat)", myLeaderID,currentTerm)
 					}
 					if myLastLogIndex < leaderPrevLogIndex{
-						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+						// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					}
 					if myLastLogIndex < leaderCommit {
 						myCommitIndex = myLastLogIndex
 					} else {
 						myCommitIndex = leaderCommit
 					}
-					// log.Printf("My commit index is %v, my leader's commit index is %v",myCommitIndex, leaderCommit)
+					log.Printf("My commit index is %v, my leader's commit index is %v",myCommitIndex, leaderCommit)
 					// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 				} else {
 					log.Printf("Received append entry from %v", ae.arg.LeaderID)
@@ -532,7 +532,21 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						// If there exists an N such that N > myCommitIndex, a majority
 						// of myMatchIndex[i] ≥ N, and log[N].term == currentTerm: set 
 						// myCommitIndex = N (§5.3, §5.4).	
+
 						log.Printf("Now checking commit indices")
+						nextMaxmyCommitIndex := myCommitIndex
+						for i := myCommitIndex; i <= myLastLogIndex; i++ {
+							peer_countReplicatedUptoi := 0
+							for _, followermyMatchIndex := range myMatchIndex {
+								if followermyMatchIndex >= i {
+									peer_countReplicatedUptoi += 1
+								}
+							}
+							if peer_countReplicatedUptoi > peer_count/2 {
+								nextMaxmyCommitIndex = i
+							}
+						}
+						myCommitIndex = nextMaxmyCommitIndex
 						
 
 					} else {
@@ -571,19 +585,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						// 	appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
 						// }(peerClients[peer_index], peer_index)
 					}
-					nextMaxmyCommitIndex := myCommitIndex
-					for i := myCommitIndex; i <= myLastLogIndex; i++ {
-						peer_countReplicatedUptoi := 0
-						for _, followermyMatchIndex := range myMatchIndex {
-							if followermyMatchIndex >= i {
-								peer_countReplicatedUptoi += 1
-							}
-						}
-						if peer_countReplicatedUptoi > peer_count/2 {
-							nextMaxmyCommitIndex = i
-						}
-					}
-					myCommitIndex = nextMaxmyCommitIndex
+					
 					log.Printf("Got append entries response from %v", ar.peer)	
 				}
 
