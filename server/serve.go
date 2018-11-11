@@ -293,6 +293,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						}(c, p)
 					}
 					myLastLogIndex += int64(len(new_entry_list)) // here?
+					printLogEntries(myLog)
 				} else {
 					// 	Reply with most recent leader's address // 
 					res := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: myLeaderID}}}
