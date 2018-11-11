@@ -48,12 +48,12 @@ func (r *Raft) RequestVote(ctx context.Context, arg *pb.RequestVoteArgs) (*pb.Re
 func randomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 	// Constant
 	if heartbeat{
-		const DurationMax = 4000
-		const DurationMin = 1000
+		const DurationMax = 400
+		const DurationMin = 100
 		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 	} else {
-		const DurationMax = 40000
-		const DurationMin = 10000
+		const DurationMax = 4000
+		const DurationMin = 1000
 		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 	}
 	
