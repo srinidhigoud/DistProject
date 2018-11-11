@@ -362,6 +362,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									for _, entry := range ae_list {
 										myLog = append( myLog, entry)
 									}
+									log.Printf("Sucessfull in adding entire log")
 									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 								} else {
 									if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
@@ -371,6 +372,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 										for _, entry := range ae_list {
 											myLog = append(myLog, entry)
 										}
+										log.Printf("Sucess in appending log")
 										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 									}	
 								}
