@@ -286,6 +286,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					// cannot use &newEntries (type *[]pb.Entry) as type []*pb.Entry in field value // how to deal with this?
 					appendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex, Entries: new_entry_list}
 					for p, c := range peerClients {
+						myNextIndex[p] = 0
 						log.Printf("Sending append entries to %v", p)
 						go func(c pb.RaftClient, p string) {
 							ret, err := c.AppendEntries(context.Background(), &appendEntry)
@@ -346,41 +347,46 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							log.Printf("failed because leader has lengthier log : my last log index %v, leader prev log index %v",myLastLogIndex, leaderPrevLogIndex)
 							ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 						} else {
-							if myLastLogIndex > leaderPrevLogIndex {
-								for _, entry := range ae_list {
-									if entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
-										myLog = myLog[:entry.Index]
-										break
-										// myLog = append(myLog, entry)
-										// myLastLogIndex = int64(len(myLog) - 1)
-									}	
-								}
-								myLastLogIndex = int64(len(myLog) - 1)
-							} 
-							if myLastLogIndex == leaderPrevLogIndex {
-								if myLastLogIndex == -1 {
-									// log.Printf("Now appending entries into my log")
-									for _, entry := range ae_list {
-										myLog = append( myLog, entry)
-									}
-									log.Printf("Sucessfull in adding entire log")
-									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
-								} else {
-									if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
-										log.Printf("failed because terms not equaled for length of %v, my term %v, leader prev term %v", len(ae_list),myLog[leaderPrevLogIndex].Term,leaderPrevLogTerm)
-										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
-									} else {
-										for _, entry := range ae_list {
-											myLog = append(myLog, entry)
-										}
-										log.Printf("Sucess in appending log")
-										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
-									}	
-								}
-								
-							} else {
-								log.Printf("failed because of default case")
+							if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm{
+								log.Printf("Failed because terms are unequal")
 								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+							} else {
+								if myLastLogIndex > leaderPrevLogIndex {
+									for _, entry := range ae_list {
+										if entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
+											myLog = myLog[:entry.Index]
+											break
+											// myLog = append(myLog, entry)
+											// myLastLogIndex = int64(len(myLog) - 1)
+										}	
+									}
+									myLastLogIndex = int64(len(myLog) - 1)
+								} 
+								if myLastLogIndex == leaderPrevLogIndex {
+									if myLastLogIndex == -1 {
+										// log.Printf("Now appending entries into my log")
+										for _, entry := range ae_list {
+											myLog = append( myLog, entry)
+										}
+										log.Printf("Sucessfull in adding entire log")
+										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+									} else {
+										if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
+											log.Printf("failed because terms not equaled for length of %v, my term %v, leader prev term %v", len(ae_list),myLog[leaderPrevLogIndex].Term,leaderPrevLogTerm)
+											ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+										} else {
+											for _, entry := range ae_list {
+												myLog = append(myLog, entry)
+											}
+											log.Printf("Sucess in appending log")
+											ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+										}	
+									}
+									
+								} else {
+									log.Printf("failed because of default case")
+									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+								}
 							}
 						}
 						currentTerm = ae.arg.Term // ?? here ??
@@ -569,7 +575,6 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						if ar.ret.Term <= currentTerm{
 							log.Printf("It was not a successful append entry operation")
 						
-						// log.Printf("1 %v,%v",myNextIndex[peer_index],myLastLogIndex)
 							if myNextIndex[peer_index] <= myLastLogIndex && len(myLog) > 0 {
 								if lenOfAppendedEntries>0 && myNextIndex[peer_index] > 0{
 									myNextIndex[peer_index] -= 1
