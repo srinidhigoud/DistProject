@@ -174,7 +174,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	// var opEntries []chan pb.Result
 	
 	// Volatile state on all servers:
-	myCommitIndex := int64(-1)
+	myCommitIndex := MaxInt
 	myLastApplied := int64(-1)
 
 	// Volatile state on leaders:
@@ -321,6 +321,11 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						currentTerm = ae.arg.Term
 						myState = "1"
 						myLeaderID = ae.arg.LeaderID
+						if myLastLogIndex < leaderCommit {
+							myCommitIndex = myLastLogIndex
+						} else {
+							myCommitIndex = leaderCommit
+						}
 						log.Printf("All hail new leader %v in term %v (heartbeat)", myLeaderID,currentTerm)
 						
 					}
@@ -377,6 +382,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							myCommitIndex = myLastLogIndex
 						}
 					}
+					printLogEntries(myLog)
 				}
 				// log.Printf("Done appending")
 				// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
