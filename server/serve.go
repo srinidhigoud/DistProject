@@ -174,7 +174,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	// var opEntries []chan pb.Result
 	
 	// Volatile state on all servers:
-	myCommitIndex := MaxInt
+	myCommitIndex := int64(-1)
 	myLastApplied := int64(-1)
 
 	// Volatile state on leaders:
