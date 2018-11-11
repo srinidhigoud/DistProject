@@ -349,7 +349,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							} else {
 								if myLastLogIndex > leaderPrevLogIndex {
 									for _, entry := range ae_list {
-										if myLog[entry.Index].Term != entry.Term{
+										if entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
 											myLog = myLog[:entry.Index]
 											break
 											// myLog = append(myLog, entry)
