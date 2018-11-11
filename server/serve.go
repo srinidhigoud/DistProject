@@ -356,15 +356,19 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 											// myLastLogIndex = int64(len(myLog) - 1)
 										}	
 									}
-									myLastLogIndex = len(myLog)-1
+									myLastLogIndex = int64(len(myLog) - 1)
 								} 
 								if myLastLogIndex == leaderPrevLogIndex {
 									if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
 										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 									} else {
-										myLog = append( myLog, entry)
+										for _, entry := range ae_list {
+											myLog = append(myLog, entry)
+										}
 										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 									}	
+								} else {
+									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 								}
 							}
 						}
