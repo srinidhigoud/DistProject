@@ -583,13 +583,13 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						}
 					} else {
 						log.Printf("Received a successful heartbeat response from %v",peer_index)
-					}	
+					}
+					log.Printf("Got append entries response from %v", ar.peer)	
 				}
 
 				// Check number of true responses and commit here ??
 				// s.HandleCommand(op)????
-				log.Printf("Got append entries response from %v", ar.peer)
-
+				
 			default:
 				//log.Printf("Default")
 				// Apply here ??? If not leader maybe ?
