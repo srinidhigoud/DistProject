@@ -534,19 +534,22 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						// myCommitIndex = N (§5.3, §5.4).	
 
 						log.Printf("Now checking commit indices")
-						nextMaxmyCommitIndex := myCommitIndex
-						for i := myCommitIndex; i <= myLastLogIndex; i++ {
-							peer_countReplicatedUptoi := 0
-							for _, followermyMatchIndex := range myMatchIndex {
-								if followermyMatchIndex >= i {
-									peer_countReplicatedUptoi += 1
+						if lenOfAppendedEntries > 0{
+							nextMaxmyCommitIndex := myCommitIndex
+							for i := myCommitIndex; i <= myLastLogIndex; i++ {
+								peer_countReplicatedUptoi := 1
+								for _, followermyMatchIndex := range myMatchIndex {
+									if followermyMatchIndex >= i {
+										peer_countReplicatedUptoi += 1
+									}
+								}
+								if peer_countReplicatedUptoi > peer_count/2 {
+									nextMaxmyCommitIndex = i
 								}
 							}
-							if peer_countReplicatedUptoi > peer_count/2 {
-								nextMaxmyCommitIndex = i
-							}
+							myCommitIndex = nextMaxmyCommitIndex
 						}
-						myCommitIndex = nextMaxmyCommitIndex
+						
 						
 
 					} else {
