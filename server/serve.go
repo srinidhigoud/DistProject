@@ -501,17 +501,17 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					// Do not do Fatalf here since the peer might be gone but we should survive.
 					log.Printf("Error calling RPC %v", ar.err)
 					// keep retrying here - a failed follower node
-					if lenOfAppendedEntries > 0 {
-						retryLastLogIndex := myLog[myNextIndex[peer_index]].Index
-						retryLastLogTerm := myLog[myNextIndex[peer_index]].Term
-						replacingPlusNewEntries := myLog[myNextIndex[peer_index]:]
-						retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
+					// if lenOfAppendedEntries > 0 {
+					// 	retryLastLogIndex := myLog[myNextIndex[peer_index]].Index
+					// 	retryLastLogTerm := myLog[myNextIndex[peer_index]].Term
+					// 	replacingPlusNewEntries := myLog[myNextIndex[peer_index]:]
+					// 	retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
 
-						go func(c pb.RaftClient, p string) {
-							ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
-							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
-						}(peerClients[peer_index], peer_index)
-					}
+					// 	go func(c pb.RaftClient, p string) {
+					// 		ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
+					// 		appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
+					// 	}(peerClients[peer_index], peer_index)
+					// }
 					
 
 				} else {
