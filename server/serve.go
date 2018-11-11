@@ -563,12 +563,13 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						
 						// log.Printf("1 %v,%v",myNextIndex[peer_index],myLastLogIndex)
 						if myNextIndex[peer_index] <= myLastLogIndex && len(myLog) > 0 {
-							// if lenOfAppendedEntries>0 && myNextIndex[peer_index] > 0{
-							// 	myNextIndex[peer_index] -= 1
-							// }
-							retryNextIndex := myNextIndex[peer_index]
+							if lenOfAppendedEntries>0 && myNextIndex[peer_index] > 0{
+								// myNextIndex[peer_index] -= 1
+							}
+							retryNextIndex := int64(0)
 							retryLastLogTerm := int64(0)
-							if retryNextIndex >=0 {
+							if myNextIndex[peer_index] >=0 {
+								retryNextIndex = myNextIndex[peer_index]
 								retryLastLogTerm = myLog[retryNextIndex].Term
 							}
 							// log.Printf("2 %v,%v",retryLastLogTerm,retryNextIndex)
