@@ -518,6 +518,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						if followerAppendSuccess {
 							log.Printf("It was a successful append entry operation")
 							// what the fuck? update myNextIndex and myMatchIndex
+							log.Printf("%v, %v, %v",myNextIndex[peer_index],len(myLog), myLastLogIndex)
 							myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)-1
 							// Find a way to not add redundant entries' lengths
 
@@ -544,7 +545,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 
 						} else {
 							log.Printf("It was not a successful append entry operation")
-							log.Printf("1 %v,%v",myNextIndex[peer_index],myLastLogIndex)
+							// log.Printf("1 %v,%v",myNextIndex[peer_index],myLastLogIndex)
 							if myNextIndex[peer_index] <= myLastLogIndex && len(myLog) > 0 {
 								retryNextIndex := int64(0)
 								retryLastLogTerm := int64(0)
@@ -552,7 +553,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									retryNextIndex = myNextIndex[peer_index]
 									retryLastLogTerm = myLog[retryNextIndex].Term
 								}
-								log.Printf("2 %v,%v",retryLastLogTerm,retryNextIndex)
+								// log.Printf("2 %v,%v",retryLastLogTerm,retryNextIndex)
 								retryLastLogIndex := myLog[retryNextIndex].Index - 1
 								replacingPlusNewEntries := myLog[retryNextIndex:]
 								
