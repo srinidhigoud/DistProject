@@ -325,14 +325,14 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						log.Printf("All hail new leader %v in term %v (heartbeat)", myLeaderID,currentTerm)
 					}
 					if myLastLogIndex < leaderPrevLogIndex{
-						// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					}
 					if myLastLogIndex < leaderCommit {
 						myCommitIndex = myLastLogIndex
 					} else {
 						myCommitIndex = leaderCommit
 					}
-					log.Printf("My commit index is %v, my leader's commit index is %v, leader's last log index is %v",myCommitIndex, leaderCommit, leaderPrevLogIndex)
+					// log.Printf("My commit index is %v, my leader's commit index is %v, leader's last log index is %v",myCommitIndex, leaderCommit, leaderPrevLogIndex)
 					// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 				} else {
 					log.Printf("Received append entry from %v", ae.arg.LeaderID)
