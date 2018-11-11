@@ -335,7 +335,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					// log.Printf("My commit index is %v, my leader's commit index is %v, leader's last log index is %v",myCommitIndex, leaderCommit, leaderPrevLogIndex)
 					// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 				} else {
-					log.Printf("Received append entry from %v", ae.arg.LeaderID)
+					// log.Printf("Received append entry from %v", ae.arg.LeaderID)
 					if ae.arg.Term < currentTerm {
 						log.Printf("failed append entry as my term is bigger")
 						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
@@ -527,19 +527,20 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					if followerAppendSuccess {
 						log.Printf("It was a successful append entry operation")
 						// what the fuck? update myNextIndex and myMatchIndex
-						log.Printf("for peer %v: %v, %v, %v",peer_index, myNextIndex[peer_index],len(myLog), myLastLogIndex)
-						myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)-1
-						// Find a way to not add redundant entries' lengths
-
-						// myNextIndex update how?
-						myNextIndex[peer_index] = myMatchIndex[peer_index] + 1
-
-						// If there exists an N such that N > myCommitIndex, a majority
-						// of myMatchIndex[i] ≥ N, and log[N].term == currentTerm: set 
-						// myCommitIndex = N (§5.3, §5.4).	
+						
 
 						log.Printf("Now checking commit indices")
 						if lenOfAppendedEntries > 0{
+							log.Printf("for peer %v: %v, %v, %v",peer_index, myNextIndex[peer_index],len(myLog), myLastLogIndex)
+							myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)-1
+							// Find a way to not add redundant entries' lengths
+
+							// myNextIndex update how?
+							myNextIndex[peer_index] = myMatchIndex[peer_index] + 1
+
+							// If there exists an N such that N > myCommitIndex, a majority
+							// of myMatchIndex[i] ≥ N, and log[N].term == currentTerm: set 
+							// myCommitIndex = N (§5.3, §5.4).	
 							nextMaxmyCommitIndex := myCommitIndex
 							for i := myCommitIndex; i <= myLastLogIndex; i++ {
 								peer_countReplicatedUptoi := 1
@@ -559,19 +560,22 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 
 					} else {
 						log.Printf("It was not a successful append entry operation")
+						myNextIndex[peer_index] -= 1
+						
 						// log.Printf("1 %v,%v",myNextIndex[peer_index],myLastLogIndex)
 						if myNextIndex[peer_index] <= myLastLogIndex && len(myLog) > 0 {
-							retryNextIndex := int64(0)
-							retryLastLogTerm := int64(0)
-							if myNextIndex[peer_index] >=0 {
-								retryNextIndex = myNextIndex[peer_index]
-								retryLastLogTerm = myLog[retryNextIndex].Term
-							}
-							// log.Printf("2 %v,%v",retryLastLogTerm,retryNextIndex)
-							retryLastLogIndex := myLog[retryNextIndex].Index - 1
+							retryNextIndex = myNextIndex[peer_index]
 							replacingPlusNewEntries := myLog[retryNextIndex:]
+							retryLastLogIndex := myLog[retryNextIndex].Index - 1
+							retryLastLogTerm := int64(0)
+							if myNextIndex[peer_index] == 0{
+								retryLastLogTerm = int64(-1)
+								retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
+							} else {
+								retryLastLogTerm = myLog[retryNextIndex-1].Term
+								retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
+							}
 							
-							retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
 							log.Printf("It was not a successful append entry operation but successful call")
 							go func(c pb.RaftClient, p string) {
 								ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
