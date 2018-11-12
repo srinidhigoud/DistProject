@@ -398,7 +398,6 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				bufferID := vr.arg.CandidateID
 				bufferLastLogIndex := vr.arg.LastLogIndex
 				bufferLasLogTerm := vr.arg.LasLogTerm
-				suc := false
 				// log.Printf("We received a RequestVote RPC and we are entering conditional check")
 				if bufferTerm < currentTerm {
 					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
