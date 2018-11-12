@@ -201,18 +201,13 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	
 
 
- 	count_inf := int64(0)	
 	// Run forever handling inputs from various channels
 	for {
-		// if count_inf%1000 == 0 {
-		// //	log.Printf("%v",count_inf)
-		// }
-		// count_inf += 1
+		
 		select {
 				
 			case <-timer.C:
 				// log.Printf("Timeout wentoff")
-				// The timer went off.
 				if CurrState != "3" {
 					log.Printf("Timeout %v", id)
 					
@@ -236,11 +231,11 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				} else {
 					// Send heartbeats
 					// log.Printf("Sending heartbeats")
-					heartbeat := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: localLastLogIndex, PrevLogTerm: localLastLogTerm, LeaderCommit: localCommitIndex}
+					new_entry_struct := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: localLastLogIndex, PrevLogTerm: localLastLogTerm, LeaderCommit: localCommitIndex}
 					for p, c := range peerClients {
 						go func(c pb.RaftClient, p string) {
 							// log.Printf("Sending heartbeats to %v",p)
-							ret, err := c.AppendEntries(context.Background(), &heartbeat)
+							ret, err := c.AppendEntries(context.Background(), &new_entry_struct)
 							bufferNextIndex := localNextIndex[p]
 							// _ = ret
 							// _ = err
@@ -249,7 +244,6 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					}
 					restartTimer(timer, r, true)
 				}
-				// This will also take care of any pesky timeouts that happened while processing the operation.
 				
 			case op := <-s.C:
 				log.Printf("We received an operation from a client")
@@ -264,7 +258,6 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					local_log = append(local_log, &update)
 					log.Printf("Leader received from a client")
 					clientReq_id_map[update.Index] = op
-					// cannot use &newEntries (type *[]pb.Entry) as type []*pb.Entry in field value // how to deal with this?
 					
 					for p, c := range peerClients {
 						log.Printf("Sending append entries to %v", p)
@@ -284,22 +277,19 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(new_entry_list)), next_index: localPrevNextIndex}
 						}(c, p)
 					}
-					localLastLogIndex += 1 // here?
+					localLastLogIndex += 1 
 					localLastLogTerm = currentTerm
 					printLogEntries(local_log)
 				} else {
-					// 	Reply with most recent leader's address // 
 					res := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: localLeaderID}}}
 					op.response <- res
 					log.Printf("Redirect to client")
 				}
 
-				// s.HandleCommand(op) //- last command?
 			case ae := <-raft.AppendChan:
 				
 				// We received an AppendEntries request from a Raft peer
 				// TODO figure out what to do here, what we do is entirely wrong.
-				// Can change to follower here as well from candidate
 				leader_commit := ae.arg.LeaderCommit
 				
 				ae_list := ae.arg.Entries
@@ -398,37 +388,35 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					printLogEntries(local_log)
 				}
 				// log.Printf("Done appending")
-				// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
-				// s.HandleCommand(op) - // here?
-				// This will also take care of any pesky timeouts that happened while processing the operation.
 				restartTimer(timer, r, false)
 			case vr := <-raft.VoteChan:
 				// log.Printf("We received a RequestVote RPC from a raft peer")
 				// We received a RequestVote RPC from a raft peer
 				// TODO: Fix this.
 
-				candidateTerm := vr.arg.Term
-				candidateID := vr.arg.CandidateID
-				candidateLastLogIndex := vr.arg.LastLogIndex
-				candidateLasLogTerm := vr.arg.LasLogTerm
+				bufferTerm := vr.arg.Term
+				bufferID := vr.arg.CandidateID
+				bufferLastLogIndex := vr.arg.LastLogIndex
+				bufferLasLogTerm := vr.arg.LasLogTerm
 				suc := false
 				// log.Printf("We received a RequestVote RPC and we are entering conditional check")
-				if candidateTerm < currentTerm {
+				if bufferTerm < currentTerm {
 					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
-					// log.Printf("local term %v is bigger than candidate's term %v",currentTerm,candidateTerm)
+					// log.Printf("local term %v is bigger than candidate's term %v",currentTerm,bufferTerm)
 				} else {
-					if candidateTerm > currentTerm {
-						// log.Printf("Candidate's term is bigger")
+					if bufferTerm > currentTerm {
+						// log.Printf("buffer's term is bigger")
 						votedFor = ""
 					}
-					currentTerm = candidateTerm
+					currentTerm = bufferTerm
 					// log.Printf("We are entering second conditional check")
-					if votedFor == "" || votedFor == candidateID {
-						if candidateLasLogTerm > localLastLogTerm || candidateLastLogIndex >= localLastLogIndex {
+					if votedFor == "" || votedFor == bufferID {
+						if bufferLasLogTerm > localLastLogTerm || bufferLastLogIndex >= localLastLogIndex {
 							// log.Printf("Vote to be granted succesfully")
 							vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: true}
-							votedFor = candidateID
-							suc = true
+							votedFor = bufferID
+							log.Printf("follower %v voted %v", id, votedFor)
+							localLeaderID = votedFor
 							// log.Printf("Vote granted succesfully")
 						} else {
 							// log.Printf("Vote grant failed 1")
@@ -444,11 +432,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				CurrState = "1"
 				restartTimer(timer, r, false) // ??
 
-				// log.Printf("Received vote request from %v", vr.arg.CandidateID)
-				if suc {
-					log.Printf("I am follower %v -  votedFor %v", id, votedFor)
-					localLeaderID = votedFor
-				}
+				
 				// log.Printf("We received a RequestVote RPC from a raft peer")
 				// vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false} // Should it be last call?
 			case vr := <-voteResponseChan:
@@ -456,48 +440,41 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// log.Printf("We received a response to a previous vote request.")
 				// TODO: Fix this
 				if vr.err != nil {
-					// Do not do Fatalf here since the peer might be gone but we should survive.
 					log.Printf("Error calling RPC %v", vr.err)
 				} else {
-					// peerID := vr.peer
+					peer_term := vr.ret.Term
 					// log.Printf("We entered no error and handling vote response at %v", id)
-					peerVoteGranted := vr.ret.VoteGranted
-					peerTerm := vr.ret.Term
-					if peerTerm > currentTerm {
-						log.Printf("Stepping down to follower %v - received response of term %v, greater than local term %v", id, peerTerm, currentTerm)
+					check_vote_status := vr.ret.VoteGranted
+					
+					if peer_term > currentTerm {
+						log.Printf("peer %v is now follower, peer term %v, current term %v", id, peer_term, currentTerm)
 						CurrState = "1"
-						currentTerm = peerTerm
+						currentTerm = peer_term
 					} else {
-						if peerVoteGranted {
+						if check_vote_status {
 							vote_count += 1
 							if vote_count > total_peer_index/2 && CurrState == "2" {
-								// isLeader = true
-								// vote_count = 0
+								
 								CurrState = "3"
 								localLeaderID = id
-								log.Printf("I am leader %v term %v - got %v votes out of %v", id, peerTerm, vote_count, total_peer_index)
-								// initialize localNextIndex and update localMatchIndex maybe?
-								// send heartbeat here? Or empty messages
-								// Multicast empty AppendEntries here
-								heartbeat := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: localLastLogIndex, PrevLogTerm: localLastLogTerm, LeaderCommit: localCommitIndex}
+								log.Printf("peer %v is now leader, peer term %v, %v / %v votes", id, peer_term, vote_count, total_peer_index)
+								
+								new_entry_struct := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: localLastLogIndex, PrevLogTerm: localLastLogTerm, LeaderCommit: localCommitIndex}
 								for p, c := range peerClients {
 									localNextIndex[p] = localLastLogIndex + 1
 									go func(c pb.RaftClient, p string) {
-										ret, err := c.AppendEntries(context.Background(), &heartbeat)
+										ret, err := c.AppendEntries(context.Background(), &new_entry_struct)
 										bufferNextIndex := localNextIndex[p]
 										// _ = ret
 										// _ = err
 										appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: bufferNextIndex}
 									}(c, p)
 								}
-								// break //?
 								restartTimer(timer, r, true)
 							}
 						}
 					}	
 
-					// log.Printf("Got response to vote request from %v", vr.peer)
-					// log.Printf("Peers %s granted %v term %v", vr.peer, vr.ret.VoteGranted, vr.ret.Term)
 				}
 				// log.Printf("I am exiting response to a vote request")
 			case ar := <-appendResponseChan:
@@ -505,32 +482,14 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// We received a response to a previous AppendEntries RPC call
 				peer_index := ar.peer
 				// followerTerm := ar.ret.Term
-				 // For decrementing localNextIndex and retrying
 				lenOfAppendedEntries := ar.len_ae
 				peer_prevNextIndex := ar.next_index
-				// operation := ar.oper
 				if ar.err != nil {
-					// Do not do Fatalf here since the peer might be gone but we should survive.
 					log.Printf("Error calling RPC %v", ar.err)
-					// keep retrying here - a failed follower node
-					// if lenOfAppendedEntries > 0 {
-					// 	retryLastLogIndex := local_log[localNextIndex[peer_index]].Index
-					// 	retryLastLogTerm := local_log[localNextIndex[peer_index]].Term
-					// 	replacingPlusNewEntries := local_log[localNextIndex[peer_index]:]
-					// 	retrynew_entry_struct := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: localCommitIndex, Entries: replacingPlusNewEntries}
-
-					// 	go func(c pb.RaftClient, p string) {
-					// 		ret, err := c.AppendEntries(context.Background(), &retrynew_entry_struct)
-					// 		appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
-					// 	}(peerClients[peer_index], peer_index)
-					// }
-					
-
 				} else {
 					followerAppendSuccess := ar.ret.Success						
 					if followerAppendSuccess {
 						log.Printf("It was a successful append entry operation for %v",peer_index)
-						// what the fuck? update localNextIndex and localMatchIndex
 						
 						
 						if lenOfAppendedEntries > 0{
@@ -539,14 +498,10 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 								log.Printf("for peer %v: peer_prevNextIndex %v, localNextIndex[peer_index] %v, len(local_log) %v, localLastLogIndex %v, lenOfAppendedEntries %v",peer_prevNextIndex, peer_index, localNextIndex[peer_index],len(local_log), localLastLogIndex, lenOfAppendedEntries)
 								localMatchIndex[peer_index] = peer_prevNextIndex + int64(lenOfAppendedEntries)-1
 
-								// Find a way to not add redundant entries' lengths
 
-								// localNextIndex update how?
 								localNextIndex[peer_index] = localMatchIndex[peer_index] + 1
 								log.Printf("for peer %v: localNextIndex[peer_index] %v, len(local_log) %v, localLastLogIndex %v, lenOfAppendedEntries %v",peer_index, localNextIndex[peer_index],len(local_log), localLastLogIndex, lenOfAppendedEntries)
-								// If there exists an N such that N > localCommitIndex, a majority
-								// of localMatchIndex[i] ≥ N, and log[N].term == currentTerm: set 
-								// localCommitIndex = N (§5.3, §5.4).	
+								
 
 								log.Printf("Now checking commit indices")
 								nextMaxlocalCommitIndex := localCommitIndex
@@ -577,69 +532,44 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									localNextIndex[peer_index] = peer_prevNextIndex - 1
 									log.Printf("Reducing peer %v next index %v",peer_index,localNextIndex[peer_index])
 								}
-								retryNextIndex := localNextIndex[peer_index]
-								// retryNextPrevIndex := localNextIndex[peer_index] 
-								log.Printf("retrying next index %v of peer %v,local last log index %v",retryNextIndex,peer_index,localLastLogIndex)
-								retryLastLogTerm := int64(0)
-								if retryNextIndex >=0 {
-									retryLastLogTerm = local_log[retryNextIndex].Term
+								bufferNextIndex := localNextIndex[peer_index]
+								bufferLastLogTerm := int64(0)
+								if bufferNextIndex >=0 {
+									bufferLastLogTerm = local_log[bufferNextIndex].Term
 								}
-								// log.Printf("2 %v,%v",retryLastLogTerm,retryNextIndex)
-								retryLastLogIndex := local_log[retryNextIndex].Index - 1
-								replacingPlusNewEntries := local_log[retryNextIndex:]
+								// log.Printf("2 %v,%v",bufferLastLogTerm,bufferNextIndex)
+								bufferLastLogIndex := local_log[bufferNextIndex].Index - 1
+								replacingPlusNewEntries := local_log[bufferNextIndex:]
 								
-								retrynew_entry_struct := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: localCommitIndex, Entries: replacingPlusNewEntries}
+								buffernew_entry_struct := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: bufferLastLogIndex, PrevLogTerm: bufferLastLogTerm, LeaderCommit: localCommitIndex, Entries: replacingPlusNewEntries}
 								log.Printf("It was not a successful append entry operation but successful call")
 								go func(c pb.RaftClient, p string) {
-									ret, err := c.AppendEntries(context.Background(), &retrynew_entry_struct)
-									appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries)), next_index: retryNextIndex}
+									ret, err := c.AppendEntries(context.Background(), &buffernew_entry_struct)
+									appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries)), next_index: bufferNextIndex}
 								}(peerClients[peer_index], peer_index)
-								// log.Printf("iAmStillRunning %v Peer back online - Retrying append entries to follower - %v", iAmStillRunning, peer_index)
 							}
 						}
 						
-						
-
-						// localNextIndex[peer_index] -= 1
-						// log.Printf("%v but %v",localNextIndex[peer_index], local_log[localNextIndex[peer_index]].Index)
-						// retryLastLogIndex := local_log[localNextIndex[peer_index]].Index
-						// retryLastLogTerm := local_log[localNextIndex[peer_index]].Term
-						// replacingPlusNewEntries := local_log[localNextIndex[peer_index]:]
-						// retrynew_entry_struct := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: localCommitIndex, Entries: replacingPlusNewEntries}
-
-						// go func(c pb.RaftClient, p string) {
-						// 	ret, err := c.AppendEntries(context.Background(), &retrynew_entry_struct)
-						// 	appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
-						// }(peerClients[peer_index], peer_index)
 					}
 					
 					log.Printf("Got append entries response from %v", ar.peer)	
 				}
-
-				// Check number of true responses and commit here ??
-				// s.HandleCommand(op)????
-				
 			default:
-				//log.Printf("Default")
-				// Apply here ??? If not leader maybe ?
+				//log.Printf("But this not that strange")
 				if localCommitIndex > localLastApplied {
 					localLastApplied += 1
-					toApply := local_log[localLastApplied]
-					opCmd := toApply.Cmd // ??
+					opCmd := local_log[localLastApplied].Cmd 
 					clientRequest, existsInlocalMachine := clientReq_id_map[localLastApplied]
 					if CurrState == "3" {
 						if existsInlocalMachine {
 							log.Printf("Handling command now")
-							// To handle unwanted cases
 							s.HandleCommandLeader(clientRequest) 
 						}
 					} else {
-						s.HandleCommandFollower(opCmd)  // This one just executes it on its own machine
+						s.HandleCommandFollower(opCmd)  
 					}
 					
 				}
-				// When to send back to client? 
-				// Where do we keep trying a failed node as a leader?
 		}
 	}
 	log.Printf("Strange to arrive here")
