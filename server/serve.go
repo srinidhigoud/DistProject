@@ -535,7 +535,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						
 						
 						if lenOfAppendedEntries > 0{
-							log.Printf("for peer %v: myNextIndex[peer_index] %v, len(myLog) %v, myLastLogIndex %v",peer_index, myNextIndex[peer_index],len(myLog), myLastLogIndex)
+							log.Printf("for peer %v: myNextIndex[peer_index] %v, len(myLog) %v, myLastLogIndex %v, lenOfAppendedEntries %v",peer_index, myNextIndex[peer_index],len(myLog), myLastLogIndex, lenOfAppendedEntries)
 							myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)-1
 							// Find a way to not add redundant entries' lengths
 
