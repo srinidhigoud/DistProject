@@ -357,7 +357,6 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 											myLog = append(myLog, entry)
 										} else {
 											if deletion_stop || entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
-												deleted_index = entry.Index
 												myLog = myLog[:entry.Index]
 												myLog = append(myLog, entry)
 												deletion_stop = true
