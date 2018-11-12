@@ -537,11 +537,12 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						if lenOfAppendedEntries > 0{
 							log.Printf("for peer %v: myNextIndex[peer_index] %v, len(myLog) %v, myLastLogIndex %v, lenOfAppendedEntries %v",peer_index, myNextIndex[peer_index],len(myLog), myLastLogIndex, lenOfAppendedEntries)
 							myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)-1
+
 							// Find a way to not add redundant entries' lengths
 
 							// myNextIndex update how?
 							myNextIndex[peer_index] = myMatchIndex[peer_index] + 1
-
+							log.Printf("for peer %v: myNextIndex[peer_index] %v, len(myLog) %v, myLastLogIndex %v, lenOfAppendedEntries %v",peer_index, myNextIndex[peer_index],len(myLog), myLastLogIndex, lenOfAppendedEntries)
 							// If there exists an N such that N > myCommitIndex, a majority
 							// of myMatchIndex[i] ≥ N, and log[N].term == currentTerm: set 
 							// myCommitIndex = N (§5.3, §5.4).	
