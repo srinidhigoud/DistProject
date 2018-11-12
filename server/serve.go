@@ -263,9 +263,10 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						go func(c pb.RaftClient, p string) {
 							// log.Printf("Sending heartbeats to %v",p)
 							ret, err := c.AppendEntries(context.Background(), &heartbeat)
+							bufferNextIndex := myNextIndex[p]
 							// _ = ret
 							// _ = err
-							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: myNextIndex[p]}
+							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: bufferNextIndex}
 						}(c, p)
 					}
 					restartTimer(timer, r, true)
@@ -506,9 +507,10 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									myNextIndex[p] = myLastLogIndex + 1
 									go func(c pb.RaftClient, p string) {
 										ret, err := c.AppendEntries(context.Background(), &heartbeat)
+										bufferNextIndex := myNextIndex[p]
 										// _ = ret
 										// _ = err
-										appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: myNextIndex[p]}
+										appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: bufferNextIndex}
 									}(c, p)
 								}
 								// break //?
