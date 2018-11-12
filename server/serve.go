@@ -290,10 +290,11 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						go func(c pb.RaftClient, p string) {
 							start := myNextIndex[p]
 							my_prevLogTerm := int64(0)
+							log.Printf("length of myLog %v, myNextIndex[p] %v",len(myLog), start)
 							if(start>0){
 								my_prevLogTerm = myLog[start].Term
 							}
-							log.Printf("length of myLog %v, myNextIndex[p] %v",len(myLog), start)
+							
 							new_entry_list := myLog[start:]
 							
 							appendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myNextIndex[p]-1, PrevLogTerm: my_prevLogTerm, LeaderCommit: myCommitIndex, Entries: new_entry_list}
