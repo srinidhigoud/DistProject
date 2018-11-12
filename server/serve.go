@@ -350,42 +350,35 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 								log.Printf("Failed because terms are unequal")
 								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 							} else {
+								deletion_stop := false
 								if myLastLogIndex > leaderPrevLogIndex {
 									for _, entry := range ae_list {
-										if entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
-											myLog = myLog[:entry.Index]
-											break
-											// myLog = append(myLog, entry)
-											// myLastLogIndex = int64(len(myLog) - 1)
-										}	
-									}
-									myLastLogIndex = int64(len(myLog) - 1)
-								} 
-								if myLastLogIndex == leaderPrevLogIndex {
-									if myLastLogIndex == -1 {
-										// log.Printf("Now appending entries into my log")
-										for _, entry := range ae_list {
-											myLog = append( myLog, entry)
-										}
-										log.Printf("Sucessfull in adding entire log")
-										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
-									} else {
-										if myLog[leaderPrevLogIndex].Term != leaderPrevLogTerm {
-											log.Printf("failed because terms not equaled for length of %v, my term %v, leader prev term %v", len(ae_list),myLog[leaderPrevLogIndex].Term,leaderPrevLogTerm)
-											ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+										if deletion_stop{
+											myLog = append(myLog, entry)
 										} else {
-											for _, entry := range ae_list {
+											if deletion_stop || entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
+												deleted_index = entry.Index
+												myLog = myLog[:entry.Index]
 												myLog = append(myLog, entry)
+												deletion_stop = true
+												// myLog = append(myLog, entry)
+												// myLastLogIndex = int64(len(myLog) - 1)
 											}
-											log.Printf("Sucess in appending log")
-											ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
-										}	
+										}
+											
 									}
 									
-								} else {
-									log.Printf("failed because of default case")
-									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
-								}
+								} 
+								
+								myLastLogIndex = int64(len(myLog) - 1)
+								if myLastLogIndex == leaderPrevLogIndex {
+									// log.Printf("Now appending entries into my log")
+									for _, entry := range ae_list {
+										myLog = append( myLog, entry)
+									}
+								} 
+								log.Printf("Sucessfull in adding entire log")
+								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 							}
 						}
 						currentTerm = ae.arg.Term // ?? here ??
