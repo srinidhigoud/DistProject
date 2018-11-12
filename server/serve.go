@@ -339,7 +339,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						log.Printf("All hail new leader %v in term %v (heartbeat)", myLeaderID,currentTerm)
 					}
 					if myLastLogIndex < leaderPrevLogIndex{
-						log.Printf("failed because of heartbeat")
+						log.Printf("failed because of heartbeat myLastLogIndex %v, leaderPrevLogIndex %v",myLastLogIndex,leaderPrevLogIndex)
 						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					}
 					if myLastLogIndex < leaderCommit {
