@@ -537,7 +537,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									bufferLastLogTerm = local_log[bufferNextIndex].Term
 								}
 								// log.Printf("2 %v,%v",bufferLastLogTerm,bufferNextIndex)
-								bufferLastLogIndex := local_log[bufferNextIndex].Index - 1
+								bufferLastLogIndex := bufferNextIndex - 1
 								replacingPlusNewEntries := local_log[bufferNextIndex:]
 								
 								buffernew_entry_struct := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: bufferLastLogIndex, PrevLogTerm: bufferLastLogTerm, LeaderCommit: localCommitIndex, Entries: replacingPlusNewEntries}
