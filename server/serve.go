@@ -544,7 +544,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				} else {
 					followerAppendSuccess := ar.ret.Success						
 					if followerAppendSuccess {
-						log.Printf("It was a successful append entry operation")
+						log.Printf("It was a successful append entry operation for %v",peer_index)
 						// what the fuck? update myNextIndex and myMatchIndex
 						
 						
