@@ -289,11 +289,14 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						log.Printf("Sending append entries to %v", p)
 						go func(c pb.RaftClient, p string) {
 							start := myNextIndex[p]
-							end := myLastLogIndex+2
-							log.Printf("length of myLog %v, myNextIndex[p] %v, myLastLogIndex+2 %v",len(myLog), start, end)
-							new_entry_list := myLog[start:end]
+							my_prevLogTerm := int64(0)
+							if(start>0){
+								my_prevLogTerm = myLog[start].Term
+							}
+							log.Printf("length of myLog %v, myNextIndex[p] %v",len(myLog), start)
+							new_entry_list := myLog[start:]
 							
-							appendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myLastLogIndex, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex, Entries: new_entry_list}
+							appendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myNextIndex[p]-1, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex, Entries: new_entry_list}
 							ret, err := c.AppendEntries(context.Background(), &appendEntry)
 							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(new_entry_list))}
 						}(c, p)
