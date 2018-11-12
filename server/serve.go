@@ -296,7 +296,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							log.Printf("length of myLog %v, myNextIndex[p] %v",len(myLog), start)
 							new_entry_list := myLog[start:]
 							
-							appendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myNextIndex[p]-1, PrevLogTerm: myLastLogTerm, LeaderCommit: myCommitIndex, Entries: new_entry_list}
+							appendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myNextIndex[p]-1, PrevLogTerm: my_prevLogTerm, LeaderCommit: myCommitIndex, Entries: new_entry_list}
 							ret, err := c.AppendEntries(context.Background(), &appendEntry)
 							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(new_entry_list))}
 						}(c, p)
