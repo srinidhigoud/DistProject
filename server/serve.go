@@ -350,23 +350,8 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 								log.Printf("Failed because terms are unequal")
 								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 							} else {
-								deletion_stop := false
 								if myLastLogIndex > leaderPrevLogIndex {
-									for _, entry := range ae_list {
-										if deletion_stop{
-											myLog = append(myLog, entry)
-										} else {
-											if deletion_stop || entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
-												myLog = myLog[:entry.Index]
-												myLog = append(myLog, entry)
-												deletion_stop = true
-												// myLog = append(myLog, entry)
-												// myLastLogIndex = int64(len(myLog) - 1)
-											}
-										}
-											
-									}
-									
+									myLog = myLog[:(leaderPrevLogIndex+1) ]
 								} 
 								
 								myLastLogIndex = int64(len(myLog) - 1)
@@ -375,9 +360,10 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									for _, entry := range ae_list {
 										myLog = append( myLog, entry)
 									}
+									log.Printf("Sucessfull in adding entire log")
+									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 								} 
-								log.Printf("Sucessfull in adding entire log")
-								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+								
 							}
 						}
 						currentTerm = ae.arg.Term // ?? here ??
