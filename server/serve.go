@@ -572,7 +572,9 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						
 							if myNextIndex[peer_index] <= myLastLogIndex && len(myLog) > 0 {
 								if lenOfAppendedEntries>0 && myNextIndex[peer_index] > 0{
+									log.Printf("Reducing peer %v next index %v",peer_index,myNextIndex[peer_index])
 									myNextIndex[peer_index] -= 1
+									log.Printf("Reducing peer %v next index %v",peer_index,myNextIndex[peer_index])
 								}
 								retryNextIndex := myNextIndex[peer_index]
 								log.Printf("retrying next index %v of peer %v,my last log index %v",retryNextIndex,peer_index,myLastLogIndex)
