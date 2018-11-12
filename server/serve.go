@@ -292,7 +292,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(new_entry_list))}
 						}(c, p)
 					}
-					myLastLogIndex += int64(len(new_entry_list)) // here?
+					myLastLogIndex += 1 // here?
 					myLastLogTerm = currentTerm
 					printLogEntries(myLog)
 				} else {
@@ -355,17 +355,18 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 								if myLastLogIndex > leaderPrevLogIndex {
 									log.Printf("failed because my log is lengthier")
 									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
-									for _, entry := range ae_list {
+									myLog = myLog[:leaderPrevLogIndex]
+									// for _, entry := range ae_list {
 										
-										if entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
-											myLog = myLog[:entry.Index]
-											break
-											// myLog = append(myLog, entry)
-											// deletion_stop = true
-											// myLog = append(myLog, entry)
-											// myLastLogIndex = int64(len(myLog) - 1)
-										}	
-									}
+									// 	if entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
+									// 		myLog = myLog[:entry.Index]
+									// 		break
+									// 		// myLog = append(myLog, entry)
+									// 		// deletion_stop = true
+									// 		// myLog = append(myLog, entry)
+									// 		// myLastLogIndex = int64(len(myLog) - 1)
+									// 	}	
+									// }
 									
 								} 
 								
@@ -571,7 +572,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									myNextIndex[peer_index] -= 1
 								}
 								retryNextIndex := myNextIndex[peer_index]
-								log.Printf("retrying next index %v,my last log index %v",retryNextIndex,myLastLogIndex)
+								log.Printf("retrying next index %v of peer %v,my last log index %v",retryNextIndex,peer_index,myLastLogIndex)
 								retryLastLogTerm := int64(0)
 								if retryNextIndex >=0 {
 									retryLastLogTerm = myLog[retryNextIndex].Term
