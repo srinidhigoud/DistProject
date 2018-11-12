@@ -280,7 +280,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					
 					new_entry := pb.Entry{Term: currentTerm, Index: myLastLogIndex + 1, Cmd: &op.command}
 					myLog = append(myLog, &new_entry)
-					new_entry_list := []*pb.Entry{&new_entry}
+					new_entry_list := myLog[myNextIndex[p]:(myLastLogIndex+2)]
 					log.Printf("Leader received from a client")
 					clientReq_id_map[new_entry.Index] = op
 					// cannot use &newEntries (type *[]pb.Entry) as type []*pb.Entry in field value // how to deal with this?
