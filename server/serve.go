@@ -578,7 +578,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									retryLastLogTerm = myLog[retryNextIndex].Term
 								}
 								// log.Printf("2 %v,%v",retryLastLogTerm,retryNextIndex)
-								retryLastLogIndex := myLog[retryNextIndex].Index - 1
+								retryLastLogIndex := retryNextIndex - 1
 								replacingPlusNewEntries := myLog[retryNextIndex:]
 								
 								retryAppendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: retryLastLogIndex, PrevLogTerm: retryLastLogTerm, LeaderCommit: myCommitIndex, Entries: replacingPlusNewEntries}
