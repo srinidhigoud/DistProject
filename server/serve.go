@@ -158,6 +158,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 	currentTerm := int64(0)
 	myLastLogTerm := int64(0)
 	myLastLogIndex := int64(-1)
+	
 	//1-follower, 2-Candidate, 3-Leader
 	
 	
@@ -179,6 +180,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 
 	// Volatile state on leaders:
 	// myNextIndex := []
+	// update_nextIndex := make(map[int64]bool)
 	myNextIndex := make(map[string]int64)
 	myMatchIndex := make(map[string]int64)
 	clientReq_id_map := make(map[int64]InputChannelType)
@@ -207,6 +209,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 		err  error
 		peer string
 		len_ae int64 // length of append tries
+		next_index int64
 	}
 
 	type VoteResponse struct {
@@ -262,7 +265,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							ret, err := c.AppendEntries(context.Background(), &heartbeat)
 							// _ = ret
 							// _ = err
-							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
+							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: myNextIndex[p]}
 						}(c, p)
 					}
 					restartTimer(timer, r, true)
@@ -299,7 +302,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							
 							appendEntry := pb.AppendEntriesArgs{Term: currentTerm, LeaderID: id, PrevLogIndex: myNextIndex[p]-1, PrevLogTerm: my_prevLogTerm, LeaderCommit: myCommitIndex, Entries: new_entry_list}
 							ret, err := c.AppendEntries(context.Background(), &appendEntry)
-							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(new_entry_list))}
+							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(new_entry_list)), next_index: myNextIndex[p]}
 						}(c, p)
 					}
 					myLastLogIndex += 1 // here?
@@ -504,7 +507,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 										ret, err := c.AppendEntries(context.Background(), &heartbeat)
 										// _ = ret
 										// _ = err
-										appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0)}
+										appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: myNextIndex[p]}
 									}(c, p)
 								}
 								// break //?
@@ -524,6 +527,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				// followerTerm := ar.ret.Term
 				 // For decrementing myNextIndex and retrying
 				lenOfAppendedEntries := ar.len_ae
+				peer_prevNextIndex := ar.next_index
 				// operation := ar.oper
 				if ar.err != nil {
 					// Do not do Fatalf here since the peer might be gone but we should survive.
@@ -552,7 +556,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						if lenOfAppendedEntries > 0{
 							if myNextIndex[peer_index] < len(myLog){
 								log.Printf("for peer %v: myNextIndex[peer_index] %v, len(myLog) %v, myLastLogIndex %v, lenOfAppendedEntries %v",peer_index, myNextIndex[peer_index],len(myLog), myLastLogIndex, lenOfAppendedEntries)
-								myMatchIndex[peer_index] = myLog[myNextIndex[peer_index]].Index + int64(lenOfAppendedEntries)-1
+								myMatchIndex[peer_index] = peer_prevNextIndex + int64(lenOfAppendedEntries)-1
 
 								// Find a way to not add redundant entries' lengths
 
@@ -606,7 +610,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 								log.Printf("It was not a successful append entry operation but successful call")
 								go func(c pb.RaftClient, p string) {
 									ret, err := c.AppendEntries(context.Background(), &retryAppendEntry)
-									appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries))}
+									appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(len(replacingPlusNewEntries)), next_index: myNextIndex[peer_index]}
 								}(peerClients[peer_index], peer_index)
 								// log.Printf("iAmStillRunning %v Peer back online - Retrying append entries to follower - %v", iAmStillRunning, peer_index)
 							}
