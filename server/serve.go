@@ -362,32 +362,37 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							} else {
 								// deletion_stop := false
 								if myLastLogIndex > leaderPrevLogIndex {
-									log.Printf("failed because my log is lengthier")
-									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
-									myLog = myLog[:leaderPrevLogIndex]
-									// for _, entry := range ae_list {
-										
-									// 	if entry.Index > myLastLogIndex || myLog[entry.Index].Term != entry.Term{
-									// 		myLog = myLog[:entry.Index]
-									// 		break
-									// 		// myLog = append(myLog, entry)
-									// 		// deletion_stop = true
-									// 		// myLog = append(myLog, entry)
-									// 		// myLastLogIndex = int64(len(myLog) - 1)
-									// 	}	
-									// }
+									log.Printf("checking because my log is lengthier")
+									// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+									myLog = myLog[:(leaderPrevLogIndex+1)]
+									for _, entry := range ae_list {
+										myLog = append(myLog, entry)
+										// if entry.Index > myLastLogIndex{
+										// 	myLog = append(myLog, entry)
+										// } else {
+										// 	if myLog[entry.Index].Term != entry.Term{
+										// 		myLog = myLog[:entry.Index]
+										// 		myLog = append(myLog,entry)
+										// 		myLastLogIndex = len(myLog)+1
+										// 	}
+										// }
+									}
+									log.Printf("Successfully edited the log")
+									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 									
-								} 
+								} else {
+									if myLastLogIndex == leaderPrevLogIndex {
+										// log.Printf("Now appending entries into my log")
+										for _, entry := range ae_list {
+											myLog = append( myLog, entry)
+										}
+										log.Printf("Sucessfull in adding entire log")
+										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+									} 
+								}
 								
 								// myLastLogIndex = int64(len(myLog) - 1)
-								if myLastLogIndex == leaderPrevLogIndex {
-									// log.Printf("Now appending entries into my log")
-									for _, entry := range ae_list {
-										myLog = append( myLog, entry)
-									}
-									log.Printf("Sucessfull in adding entire log")
-									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
-								} 
+								
 							}
 						}
 						currentTerm = ae.arg.Term // ?? here ??
