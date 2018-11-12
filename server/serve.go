@@ -377,10 +377,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 									}
 									log.Printf("Sucessfull in adding entire log")
 									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
-								} else {
-									log.Printf("failed because of default case")
-									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
-								}
+								} 
 							}
 						}
 						currentTerm = ae.arg.Term // ?? here ??
