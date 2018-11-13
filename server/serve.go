@@ -111,28 +111,7 @@ func connectToPeer(peer string) (pb.RaftClient, error) {
 	return pb.NewRaftClient(conn), nil
 }
 
-////////////////////debug///////////////////
-func printLogEntries(local_log []*pb.Entry) {
-	// local_logs := ""
-	for idx, entry := range local_log {
-		// entryLog := "(" + string(entry.Index) + ", " + string(entry.Term) + ")"
-		ecmd := ""
-		log.Printf("local logs - ")	
-		switch c := entry.Cmd; 
-		c.Operation {
-		case pb.Op_GET:
-			ecmd = "Op_GET"
-		case pb.Op_SET:
-			ecmd = "Op_SET"
-		case pb.Op_CLEAR:
-			ecmd = "Op_CLEAR"
-		case pb.Op_CAS:
-			ecmd = "Op_CAS"
-		}
-		log.Printf("idx %v log : Index %v Term %v Cmd %v", idx, entry.Index, entry.Term, ecmd)	
-		// local_logs = entryLog + " " + local_logs
-	}
-}
+
 
 
 // The main service loop. All modifications to the KV store are run through here.
@@ -279,7 +258,6 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					}
 					localLastLogIndex += 1 
 					localLastLogTerm = currentTerm
-					printLogEntries(local_log)
 				} else {
 					res := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: localLeaderID}}}
 					op.response <- res
@@ -385,7 +363,6 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						}
 						// log.Printf("local commit index is %v, local leader's commit index is %v",localCommitIndex, leader_commit)
 					}
-					printLogEntries(local_log)
 				}
 				// log.Printf("Done appending")
 				restartTimer(timer, r, false)
