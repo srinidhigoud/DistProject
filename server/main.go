@@ -14,6 +14,10 @@ import (
 	"github.com/nyu-distributed-systems-fa18/lab-2-raft-srinidhigoud/pb"
 )
 
+type KvStoreServer struct {
+	Store map[string]string
+}
+
 func main() {
 	// Argument parsing
 	var r *rand.Rand
@@ -25,8 +29,9 @@ func main() {
 		"Seed for random number generator, values less than 0 result in use of time")
 	flag.IntVar(&clientPort, "port", 3000,
 		"Port on which server should listen to client requests")
-	flag.IntVar(&raftPort, "raft", 3001,
+	flag.IntVar(&raftPort, "pbft", 3001,
 		"Port on which server should listen to Raft requests")
+	flag.StringVar(&client, "client", "127.0.0.1:3002", "Pbft client")
 	flag.Var(&peers, "peer", "A peer for this process")
 	flag.Parse()
 
@@ -60,7 +65,8 @@ func main() {
 
 	// Initialize KVStore
 	store := KVStore{C: make(chan InputChannelType), store: make(map[string]string)}
-	go serve(&store, r, &peers, id, raftPort)
+	kvs := KvStoreServer{Store: make(map[string]string)}
+	go serve(&store, r, &peers, id, pbftPort, client, &kvs)
 
 	// Tell GRPC that s will be serving requests for the KvStore service and should use store (defined on line 23)
 	// as the struct whose methods should be called in response.
