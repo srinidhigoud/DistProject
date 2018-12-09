@@ -30,9 +30,9 @@ func main() {
 	flag.IntVar(&pbftPort, "pbft", 3001,
 		"Port on which server should listen to Pbft requests")
 	flag.Var(&peers, "peer", "A peer for this process")
-	flag.Var(&clients, "client", "A client for this process")
+	// flag.Var(&clients, "client", "A client for this process")
 	flag.Parse()
-
+	clients.Set("127.0.0.1:3008") 
 	// Initialize the random number generator
 	if seed < 0 {
 		r = rand.New(rand.NewSource(time.Now().UnixNano()))
