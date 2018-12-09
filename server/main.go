@@ -11,12 +11,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/nyu-distributed-systems-fa18/lab-2-raft-srinidhigoud/pb"
+	"/home/vagrant/go/src/github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	"/home/vagrant/go/src/github.com/nyu-distributed-systems-fa18/DistProject/util"
 )
-
-type KvStoreServer struct {
-	Store map[string]string
-}
 
 func main() {
 	// Argument parsing
@@ -24,14 +21,13 @@ func main() {
 	var seed int64
 	var peers arrayPeers
 	var clientPort int
-	var raftPort int
+	var pbftPort int
 	flag.Int64Var(&seed, "seed", -1,
 		"Seed for random number generator, values less than 0 result in use of time")
 	flag.IntVar(&clientPort, "port", 3000,
 		"Port on which server should listen to client requests")
-	flag.IntVar(&raftPort, "pbft", 3001,
-		"Port on which server should listen to Raft requests")
-	flag.StringVar(&client, "client", "127.0.0.1:3002", "Pbft client")
+	flag.IntVar(&pbftPort, "pbft", 3001,
+		"Port on which server should listen to Pbft requests")
 	flag.Var(&peers, "peer", "A peer for this process")
 	flag.Parse()
 
@@ -49,7 +45,7 @@ func main() {
 		log.Fatalf("Could not get hostname")
 	}
 
-	id := fmt.Sprintf("%s:%d", name, raftPort)
+	id := fmt.Sprintf("%s:%d", name, pbftPort)
 	log.Printf("Starting peer with ID %s", id)
 
 	// Convert port to a string form
@@ -65,8 +61,7 @@ func main() {
 
 	// Initialize KVStore
 	store := KVStore{C: make(chan InputChannelType), store: make(map[string]string)}
-	kvs := KvStoreServer{Store: make(map[string]string)}
-	go serve(&store, r, &peers, id, pbftPort, client, &kvs)
+	go serve(&store, r, &peers, id, pbftPort)
 
 	// Tell GRPC that s will be serving requests for the KvStore service and should use store (defined on line 23)
 	// as the struct whose methods should be called in response.
