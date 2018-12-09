@@ -159,7 +159,7 @@ func connectToClient(client string) (pb.PbftGlobalClient, error) {
 	backoffConfig := grpc.DefaultBackoffConfig
 	// Choose an aggressive backoff strategy here.
 	backoffConfig.MaxDelay = 500 * time.Millisecond
-	conn, err := grpc.Dial(peer, grpc.WithInsecure(), grpc.WithBackoffConfig(backoffConfig))
+	conn, err := grpc.Dial(client, grpc.WithInsecure(), grpc.WithBackoffConfig(backoffConfig))
 	// Ensure connection did not fail, which should not happen since this happens in the background
 	if err != nil {
 		return pb.NewPbftGlobalClient(nil), err
