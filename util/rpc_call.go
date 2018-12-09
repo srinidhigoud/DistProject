@@ -14,14 +14,14 @@ import (
 
 // Messages that can be passed from the PbftLocal RPC server to the main loop for AppendEntries
 type AppendEntriesInput struct {
-	arg      *pb.AppendEntriesArgs
-	response chan pb.AppendEntriesRet
+	Arg      *pb.AppendEntriesArgs
+	Response chan pb.AppendEntriesRet
 }
 
 // Messages that can be passed from the PbftLocal RPC server to the main loop for VoteInput
 type VoteInput struct {
-	arg      *pb.RequestVoteArgs
-	response chan pb.RequestVoteRet
+	Arg      *pb.RequestVoteArgs
+	Response chan pb.RequestVoteRet
 }
 
 // Struct off of which we shall hang the PbftLocal service
@@ -35,30 +35,30 @@ type PbftGlobal struct {
 	VoteChan   chan VoteInput
 }
 
-func (r *PbftLocal) AppendEntries(ctx context.Context, arg *pb.AppendEntriesArgs) (*pb.AppendEntriesRet, error) {
+func (r *PbftLocal) AppendEntries(ctx context.Context, Arg *pb.AppendEntriesArgs) (*pb.AppendEntriesRet, error) {
 	c := make(chan pb.AppendEntriesRet)
-	r.AppendChan <- AppendEntriesInput{arg: arg, response: c}
+	r.AppendChan <- AppendEntriesInput{Arg: Arg, Response: c}
 	result := <-c
 	return &result, nil
 }
 
-func (r *PbftLocal) RequestVote(ctx context.Context, arg *pb.RequestVoteArgs) (*pb.RequestVoteRet, error) {
+func (r *PbftLocal) RequestVote(ctx context.Context, Arg *pb.RequestVoteArgs) (*pb.RequestVoteRet, error) {
 	c := make(chan pb.RequestVoteRet)
-	r.VoteChan <- VoteInput{arg: arg, response: c}
+	r.VoteChan <- VoteInput{Arg: Arg, Response: c}
 	result := <-c
 	return &result, nil
 }
 
-func (r *PbftGlobal) AppendEntries(ctx context.Context, arg *pb.AppendEntriesArgs) (*pb.AppendEntriesRet, error) {
+func (r *PbftGlobal) AppendEntries(ctx context.Context, Arg *pb.AppendEntriesArgs) (*pb.AppendEntriesRet, error) {
 	c := make(chan pb.AppendEntriesRet)
-	r.AppendChan <- AppendEntriesInput{arg: arg, response: c}
+	r.AppendChan <- AppendEntriesInput{Arg: Arg, Response: c}
 	result := <-c
 	return &result, nil
 }
 
-func (r *PbftGlobal) RequestVote(ctx context.Context, arg *pb.RequestVoteArgs) (*pb.RequestVoteRet, error) {
+func (r *PbftGlobal) RequestVote(ctx context.Context, Arg *pb.RequestVoteArgs) (*pb.RequestVoteRet, error) {
 	c := make(chan pb.RequestVoteRet)
-	r.VoteChan <- VoteInput{arg: arg, response: c}
+	r.VoteChan <- VoteInput{Arg: Arg, Response: c}
 	result := <-c
 	return &result, nil
 }

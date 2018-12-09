@@ -65,7 +65,7 @@ func main() {
 	go serve(&store, r, &peers, id, pbftPort)
 
 	// Tell GRPC that s will be serving requests for the KvStore service and should use store (defined on line 23)
-	// as the struct whose methods should be called in response.
+	// as the struct whose methods should be called in Response.
 	pb.RegisterKvStoreServer(s, &store)
 	log.Printf("Going to listen on port %v", clientPort)
 	// Start serving, this will block this function and only return when done.

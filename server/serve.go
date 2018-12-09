@@ -161,7 +161,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					util.PrintLogEntries(local_log)
 				} else {
 					res := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: localLeaderID}}}
-					op.response <- res
+					op.Response <- res
 					log.Printf("Redirect to client")
 				}
 
@@ -169,26 +169,26 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				
 				// We received an AppendEntries request from a PbftLocal peer
 				// TODO figure out what to do here, what we do is entirely wrong.
-				leader_commit := ae.arg.LeaderCommit
+				leader_commit := ae.Arg.LeaderCommit
 				
-				ae_list := ae.arg.Entries
+				ae_list := ae.Arg.Entries
 				isHeartBeat := false
 				if len(ae_list) == 0 {
 					isHeartBeat = true  
 				} 
-				leader_PrevLogIndex := ae.arg.PrevLogIndex
-				leader_PrevLogTerm := ae.arg.PrevLogTerm
+				leader_PrevLogIndex := ae.Arg.PrevLogIndex
+				leader_PrevLogTerm := ae.Arg.PrevLogTerm
 				if isHeartBeat {
 					// log.Printf("Received heartbeat from %v", localLeaderID)
-					if ae.arg.Term > currentTerm {
-						currentTerm = ae.arg.Term
+					if ae.Arg.Term > currentTerm {
+						currentTerm = ae.Arg.Term
 						CurrState = "1"
-						localLeaderID = ae.arg.LeaderID
+						localLeaderID = ae.Arg.LeaderID
 						log.Printf("Term %v: Now the leader is %v in term %v (heartbeat)", currentTerm, localLeaderID)
 					}
 					if localLastLogIndex < leader_PrevLogIndex{
 						log.Printf("failed because of heartbeat localLastLogIndex %v, leader_PrevLogIndex %v",localLastLogIndex,leader_PrevLogIndex)
-						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+						ae.Response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					}
 					if localLastLogIndex < leader_commit {
 						localCommitIndex = localLastLogIndex
@@ -196,26 +196,26 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						localCommitIndex = leader_commit
 					}
 					// log.Printf("local commit index is %v, local leader's commit index is %v, leader's last log index is %v",localCommitIndex, leader_commit, leader_PrevLogIndex)
-					// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+					// ae.Response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 				} else {
-					// log.Printf("Received append entry from %v", ae.arg.LeaderID)
-					if ae.arg.Term < currentTerm {
+					// log.Printf("Received append entry from %v", ae.Arg.LeaderID)
+					if ae.Arg.Term < currentTerm {
 						log.Printf("failed append entry as local term is bigger")
-						ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+						ae.Response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 					} else {
 						log.Printf("localLastLogIndex %v leader_PrevLogIndex %v len(local_log) %v leader_PrevLogTerm %v length of append list %v", localLastLogIndex, leader_PrevLogIndex, len(local_log), leader_PrevLogTerm, len(ae_list))
 						if localLastLogIndex < leader_PrevLogIndex {
 							log.Printf("failed because leader has lengthier log : local last log index %v, leader prev log index %v",localLastLogIndex, leader_PrevLogIndex)
-							ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+							ae.Response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 						} else {
 							if leader_PrevLogIndex != -1 && local_log[leader_PrevLogIndex].Term != leader_PrevLogTerm{
 								log.Printf("Failed because terms are unequal")
-								ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+								ae.Response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 							} else {
 								// deletion_stop := false
 								if localLastLogIndex > leader_PrevLogIndex {
 									log.Printf("checking because local log is lengthier")
-									// ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
+									// ae.Response <- pb.AppendEntriesRet{Term: currentTerm, Success: false}
 									local_log = local_log[:(leader_PrevLogIndex+1)]
 									for _, entry := range ae_list {
 										local_log = append(local_log, entry)
@@ -230,7 +230,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 										// }
 									}
 									log.Printf("Successfully edited the log")
-									ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+									ae.Response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 									
 								} else {
 									if localLastLogIndex == leader_PrevLogIndex {
@@ -239,7 +239,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 											local_log = append( local_log, entry)
 										}
 										log.Printf("Sucessfull in adding entire log")
-										ae.response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
+										ae.Response <- pb.AppendEntriesRet{Term: currentTerm, Success: true}
 									} 
 								}
 								
@@ -247,9 +247,9 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								
 							}
 						}
-						currentTerm = ae.arg.Term // ?? here ??
+						currentTerm = ae.Arg.Term // ?? here ??
 						CurrState = "1" // ??
-						localLeaderID = ae.arg.LeaderID // ?? here ??
+						localLeaderID = ae.Arg.LeaderID // ?? here ??
 						localLastLogIndex = int64(len(local_log) - 1)
 						if len(local_log) > 0{
 							localLastLogTerm = local_log[localLastLogIndex].Term
@@ -273,13 +273,13 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				// We received a RequestVote RPC from a pbft peer
 				// TODO: Fix this.
 
-				bufferTerm := vr.arg.Term
-				bufferID := vr.arg.CandidateID
-				bufferLastLogIndex := vr.arg.LastLogIndex
-				bufferLasLogTerm := vr.arg.LasLogTerm
+				bufferTerm := vr.Arg.Term
+				bufferID := vr.Arg.CandidateID
+				bufferLastLogIndex := vr.Arg.LastLogIndex
+				bufferLasLogTerm := vr.Arg.LasLogTerm
 				// log.Printf("We received a RequestVote RPC and we are entering conditional check")
 				if bufferTerm < currentTerm {
-					vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
+					vr.Response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 					// log.Printf("local term %v is bigger than candidate's term %v",currentTerm,bufferTerm)
 				} else {
 					if bufferTerm > currentTerm {
@@ -291,18 +291,18 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					if votedFor == "" || votedFor == bufferID {
 						if bufferLasLogTerm > localLastLogTerm || bufferLastLogIndex >= localLastLogIndex {
 							// log.Printf("Vote to be granted succesfully")
-							vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: true}
+							vr.Response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: true}
 							votedFor = bufferID
 							log.Printf("follower %v voted %v", id, votedFor)
 							localLeaderID = votedFor
 							// log.Printf("Vote granted succesfully")
 						} else {
 							// log.Printf("Vote grant failed 1")
-							vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
+							vr.Response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 						}
 					} else {
 						// log.Printf("Vote grant failed 2")
-						vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
+						vr.Response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false}
 					}
 				}
 				
@@ -312,16 +312,16 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 
 				
 				// log.Printf("We received a RequestVote RPC from a pbft peer")
-				// vr.response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false} // Should it be last call?
+				// vr.Response <- pb.RequestVoteRet{Term: currentTerm, VoteGranted: false} // Should it be last call?
 			case vr := <-voteResponseChan:
-				// We received a response to a previou vote request.
-				// log.Printf("We received a response to a previous vote request.")
+				// We received a Response to a previou vote request.
+				// log.Printf("We received a Response to a previous vote request.")
 				// TODO: Fix this
 				if vr.err != nil {
 					log.Printf("Error calling RPC %v", vr.err)
 				} else {
 					peer_term := vr.ret.Term
-					// log.Printf("We entered no error and handling vote response at %v", id)
+					// log.Printf("We entered no error and handling vote Response at %v", id)
 					check_vote_status := vr.ret.VoteGranted
 					
 					if peer_term > currentTerm {
@@ -354,10 +354,10 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					}	
 
 				}
-				// log.Printf("I am exiting response to a vote request")
+				// log.Printf("I am exiting Response to a vote request")
 			case ar := <-appendResponseChan:
-				log.Printf("We received a response to a previous AppendEntries RPC call")
-				// We received a response to a previous AppendEntries RPC call
+				log.Printf("We received a Response to a previous AppendEntries RPC call")
+				// We received a Response to a previous AppendEntries RPC call
 				peer_index := ar.peer
 				// followerTerm := ar.ret.Term
 				lenOfAppendedEntries := ar.len_ae
@@ -430,7 +430,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						
 					}
 					
-					log.Printf("Got append entries response from %v", ar.peer)	
+					log.Printf("Got append entries Response from %v", ar.peer)	
 				}
 			default:
 				//log.Printf("But this not that strange")
