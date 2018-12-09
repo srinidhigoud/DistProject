@@ -19,8 +19,8 @@ func main() {
 	// Argument parsing
 	var r *rand.Rand
 	var seed int64
-	var peers util.arrayPeers
-	var client util.arrayClients
+	var peers util.ArrayPeers
+	var client util.ArrayClients
 	var clientPort int
 	var pbftPort int
 	flag.Int64Var(&seed, "seed", -1,
