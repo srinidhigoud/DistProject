@@ -30,7 +30,7 @@ func main() {
 	flag.IntVar(&pbftPort, "pbft", 3001,
 		"Port on which server should listen to Pbft requests")
 	flag.Var(&peers, "peer", "A peer for this process")
-	flag.Var(&client, "client", "A client for this process")
+	flag.Var(&clients, "client", "A client for this process")
 	flag.Parse()
 
 	// Initialize the random number generator
