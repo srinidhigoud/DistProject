@@ -56,7 +56,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, clients *util.Array
 		peerClients[peer] = client
 		localNextIndex[peer] = 0
 		localMatchIndex[peer] = -1
-		log.Printf("Connected to %v", peer)
+		log.Printf("Connected to %v | ", peer)
 	}
 	localMatchIndex[id] = -1
 	localNextIndex[id] = 0
