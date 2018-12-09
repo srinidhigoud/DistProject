@@ -43,7 +43,7 @@ func main() {
 	kvc := pb.NewKvStoreClient(conn)
 
 	pbft := PbftGlobal{AppendChan: make(chan AppendEntriesInput), VoteChan: make(chan VoteInput)}
-	// go RunPbftGlobalServer(&pbft, port)
+	go RunPbftGlobalServer(&pbft, port)
 
 	// Clear KVC
 	res, err := kvc.Clear(context.Background(), &pb.Empty{})
