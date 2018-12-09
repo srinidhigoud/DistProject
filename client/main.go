@@ -9,8 +9,8 @@ import (
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"/home/vagrant/go/src/github.com/nyu-distributed-systems-fa18/DistProject/pb"
-	"/home/vagrant/go/src/github.com/nyu-distributed-systems-fa18/DistProject/util"
+	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	"github.com/nyu-distributed-systems-fa18/DistProject/util"
 )
 
 func usage() {

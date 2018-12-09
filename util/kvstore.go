@@ -5,8 +5,8 @@ import (
 
 	context "golang.org/x/net/context"
 
-	"/home/vagrant/go/src/github.com/nyu-distributed-systems-fa18/DistProject/pb"
-	"/home/vagrant/go/src/github.com/nyu-distributed-systems-fa18/DistProject/util"
+	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	"github.com/nyu-distributed-systems-fa18/DistProject/util"
 )
 
 // The struct for data to send over channel

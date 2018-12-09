@@ -9,7 +9,7 @@ import (
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"/home/vagrant/go/src/github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
 )
 
 // Messages that can be passed from the PbftLocal RPC server to the main loop for AppendEntries
