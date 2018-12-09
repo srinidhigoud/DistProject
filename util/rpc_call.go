@@ -91,7 +91,7 @@ func RestartTimer(timer *time.Timer, r *rand.Rand, heartbeat bool) {
 		}
 
 	}
-	timer.Reset(randomDuration(r, heartbeat))
+	timer.Reset(RandomDuration(r, heartbeat))
 }
 
 
