@@ -15,7 +15,7 @@ import (
 
 
 // The main service loop. All modifications to the KV store are run through here.
-func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int) {
+func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, clients *util.ArrayClients id string, port int) {
 	
 	const MaxUint = ^uint64(0) 
 	const MinUint = 0 

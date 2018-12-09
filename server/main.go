@@ -20,7 +20,7 @@ func main() {
 	var r *rand.Rand
 	var seed int64
 	var peers util.ArrayPeers
-	var client util.ArrayClients
+	var clients util.ArrayClients
 	var clientPort int
 	var pbftPort int
 	flag.Int64Var(&seed, "seed", -1,
@@ -30,6 +30,7 @@ func main() {
 	flag.IntVar(&pbftPort, "pbft", 3001,
 		"Port on which server should listen to Pbft requests")
 	flag.Var(&peers, "peer", "A peer for this process")
+	flag.Var(&client, "client", "A client for this process")
 	flag.Parse()
 
 	// Initialize the random number generator
@@ -62,7 +63,7 @@ func main() {
 
 	// Initialize KVStore
 	store := KVStore{C: make(chan InputChannelType), store: make(map[string]string)}
-	go serve(&store, r, &peers, id, pbftPort)
+	go serve(&store, r, &peers, &clients, id, pbftPort)
 
 	// Tell GRPC that s will be serving requests for the KvStore service and should use store (defined on line 23)
 	// as the struct whose methods should be called in Response.
