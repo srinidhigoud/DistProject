@@ -58,6 +58,18 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, clients *util.Array
 		localMatchIndex[peer] = -1
 		log.Printf("Connected to %v | ", peer)
 	}
+
+	for _, peer := range *clients {
+		client, err := util.ConnectToClient(peer)
+		if err != nil {
+			log.Fatalf("Failed to connect to GRPC server %v", err)
+		}
+		peerClients[peer] = client
+		localNextIndex[peer] = 0
+		localMatchIndex[peer] = -1
+		log.Printf("Connected to %v | ", peer)
+	}
+
 	localMatchIndex[id] = -1
 	localNextIndex[id] = 0
 
