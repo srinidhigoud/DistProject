@@ -161,7 +161,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					util.PrintLogEntries(local_log)
 				} else {
 					res := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: localLeaderID}}}
-					op.Response <- res
+					op.response <- res
 					log.Printf("Redirect to client")
 				}
 
