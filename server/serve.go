@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
+	// "fmt"
 	"log"
 	rand "math/rand"
-	"net"
+	// "net"
 	"time"
 	context "golang.org/x/net/context"
-	"google.golang.org/grpc"
+	// "google.golang.org/grpc"
 
 	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
 	"github.com/nyu-distributed-systems-fa18/DistProject/util"
@@ -15,21 +15,21 @@ import (
 
 
 // The main service loop. All modifications to the KV store are run through here.
-func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
+func serve(s *util.KVStore, r *rand.Rand, peers *util.arrayPeers, id string, port int) {
 	
 	const MaxUint = ^uint64(0) 
 	const MinUint = 0 
 	const MaxInt = int64(MaxUint >> 1) 
 	const MinInt = -MaxInt - 1
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	pbft := PbftLocal{AppendChan: make(chan AppendEntriesInput), VoteChan: make(chan VoteInput)}
+	pbft := util.PbftLocal{AppendChan: make(chan util.AppendEntriesInput), VoteChan: make(chan util.VoteInput)}
 	// Start in a Go routine so it doesn't affect us.
-	go RunPbftLocalServer(&pbft, port)
+	go util.RunPbftLocalServer(&pbft, port)
 	peerClients := make(map[string]pb.PbftLocalClient)
 	//////////////////////////////////////////////////////////////STATE////////////////////////////////////////////////////////////
 	
 	total_peer_index := len(*peers)+1//here///////////////////////
-	timer := time.NewTimer(randomDuration(r, false))
+	timer := time.NewTimer(util.randomDuration(r, false))
 	CurrState := "1" //1-follower, 2-Candidate, 3-Leader
 	votedFor := ""
 	vote_count := 0
@@ -49,7 +49,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 
 	
 	for _, peer := range *peers {
-		client, err := connectToPeer(peer)
+		client, err := util.connectToPeer(peer)
 		if err != nil {
 			log.Fatalf("Failed to connect to GRPC server %v", err)
 		}
@@ -106,7 +106,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						// log.Printf("But now I exited timer time out thingy")
 					}
 					log.Printf("candidate %v requesting from %v peer", id, fellow_peers)
-					restartTimer(timer, r, false)
+					util.restartTimer(timer, r, false)
 				} else {
 					// Send heartbeats
 					// log.Printf("Sending heartbeats")
@@ -121,7 +121,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: bufferNextIndex}
 						}(c, p)
 					}
-					restartTimer(timer, r, true)
+					util.restartTimer(timer, r, true)
 				}
 				
 			case op := <-s.C:
@@ -158,7 +158,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 					}
 					localLastLogIndex += 1 
 					localLastLogTerm = currentTerm
-					printLogEntries(local_log)
+					util.printLogEntries(local_log)
 				} else {
 					res := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: localLeaderID}}}
 					op.response <- res
@@ -264,10 +264,10 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 						}
 						// log.Printf("local commit index is %v, local leader's commit index is %v",localCommitIndex, leader_commit)
 					}
-					printLogEntries(local_log)
+					util.printLogEntries(local_log)
 				}
 				// log.Printf("Done appending")
-				restartTimer(timer, r, false)
+				util.restartTimer(timer, r, false)
 			case vr := <-pbft.VoteChan:
 				// log.Printf("We received a RequestVote RPC from a pbft peer")
 				// We received a RequestVote RPC from a pbft peer
@@ -308,7 +308,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 				
 				// log.Printf("Exiting conditional check")
 				CurrState = "1"
-				restartTimer(timer, r, false) // ??
+				util.restartTimer(timer, r, false) // ??
 
 				
 				// log.Printf("We received a RequestVote RPC from a pbft peer")
@@ -348,7 +348,7 @@ func serve(s *KVStore, r *rand.Rand, peers *arrayPeers, id string, port int) {
 										appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: bufferNextIndex}
 									}(c, p)
 								}
-								restartTimer(timer, r, true)
+								util.restartTimer(timer, r, true)
 							}
 						}
 					}	
