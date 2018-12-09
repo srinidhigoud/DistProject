@@ -41,9 +41,9 @@ func main() {
 	log.Printf("Connected")
 	// Create a KvStore client
 	kvc := pb.NewKvStoreClient(conn)
-
-	pbft := PbftGlobal{AppendChan: make(chan AppendEntriesInput), VoteChan: make(chan VoteInput)}
-	go RunPbftGlobalServer(&pbft, port)
+	port := 3008
+	pbft := util.PbftGlobal{AppendChan: make(chan AppendEntriesInput), VoteChan: make(chan VoteInput)}
+	go util.RunPbftGlobalServer(&pbft, port)
 
 	// Clear KVC
 	res, err := kvc.Clear(context.Background(), &pb.Empty{})
