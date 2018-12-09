@@ -64,7 +64,7 @@ func (r *PbftGlobal) RequestVote(ctx context.Context, arg *pb.RequestVoteArgs) (
 }
 
 // Compute a random duration in milliseconds
-func randomDuration(r *rand.Rand, heartbeat bool) time.Duration {
+func RandomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 	// Constant
 	if heartbeat{
 		const DurationMax = 5000
@@ -80,7 +80,7 @@ func randomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 
 
 // Restart the supplied timer using a random timeout based on function above
-func restartTimer(timer *time.Timer, r *rand.Rand, heartbeat bool) {
+func RestartTimer(timer *time.Timer, r *rand.Rand, heartbeat bool) {
 	stopped := timer.Stop()
 	// If stopped is false that means someone stopped before us, which could be due to the timer going off before this,
 	// in which case we just drain notifications.
@@ -142,7 +142,7 @@ func RunPbftGlobalServer(r *PbftGlobal, port int) {
 
 
 
-func connectToPeer(peer string) (pb.PbftLocalClient, error) {
+func ConnectToPeer(peer string) (pb.PbftLocalClient, error) {
 	backoffConfig := grpc.DefaultBackoffConfig
 	// Choose an aggressive backoff strategy here.
 	backoffConfig.MaxDelay = 500 * time.Millisecond
@@ -155,7 +155,7 @@ func connectToPeer(peer string) (pb.PbftLocalClient, error) {
 }
 
 
-func connectToClient(client string) (pb.PbftGlobalClient, error) {
+func ConnectToClient(client string) (pb.PbftGlobalClient, error) {
 	backoffConfig := grpc.DefaultBackoffConfig
 	// Choose an aggressive backoff strategy here.
 	backoffConfig.MaxDelay = 500 * time.Millisecond
@@ -169,7 +169,7 @@ func connectToClient(client string) (pb.PbftGlobalClient, error) {
 
 
 ////////////////////debug///////////////////
-func printLogEntries(local_log []*pb.Entry) {
+func PrintLogEntries(local_log []*pb.Entry) {
 	// local_logs := ""
 	for idx, entry := range local_log {
 		// entryLog := "(" + string(entry.Index) + ", " + string(entry.Term) + ")"

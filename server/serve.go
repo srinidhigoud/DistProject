@@ -15,7 +15,7 @@ import (
 
 
 // The main service loop. All modifications to the KV store are run through here.
-func serve(s *util.KVStore, r *rand.Rand, peers *util.arrayPeers, id string, port int) {
+func serve(s *util.KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int) {
 	
 	const MaxUint = ^uint64(0) 
 	const MinUint = 0 
@@ -29,7 +29,7 @@ func serve(s *util.KVStore, r *rand.Rand, peers *util.arrayPeers, id string, por
 	//////////////////////////////////////////////////////////////STATE////////////////////////////////////////////////////////////
 	
 	total_peer_index := len(*peers)+1//here///////////////////////
-	timer := time.NewTimer(util.randomDuration(r, false))
+	timer := time.NewTimer(util.RandomDuration(r, false))
 	CurrState := "1" //1-follower, 2-Candidate, 3-Leader
 	votedFor := ""
 	vote_count := 0
@@ -49,7 +49,7 @@ func serve(s *util.KVStore, r *rand.Rand, peers *util.arrayPeers, id string, por
 
 	
 	for _, peer := range *peers {
-		client, err := util.connectToPeer(peer)
+		client, err := util.ConnectToPeer(peer)
 		if err != nil {
 			log.Fatalf("Failed to connect to GRPC server %v", err)
 		}
@@ -106,7 +106,7 @@ func serve(s *util.KVStore, r *rand.Rand, peers *util.arrayPeers, id string, por
 						// log.Printf("But now I exited timer time out thingy")
 					}
 					log.Printf("candidate %v requesting from %v peer", id, fellow_peers)
-					util.restartTimer(timer, r, false)
+					util.RestartTimer(timer, r, false)
 				} else {
 					// Send heartbeats
 					// log.Printf("Sending heartbeats")
@@ -121,7 +121,7 @@ func serve(s *util.KVStore, r *rand.Rand, peers *util.arrayPeers, id string, por
 							appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: bufferNextIndex}
 						}(c, p)
 					}
-					util.restartTimer(timer, r, true)
+					util.RestartTimer(timer, r, true)
 				}
 				
 			case op := <-s.C:
@@ -158,7 +158,7 @@ func serve(s *util.KVStore, r *rand.Rand, peers *util.arrayPeers, id string, por
 					}
 					localLastLogIndex += 1 
 					localLastLogTerm = currentTerm
-					util.printLogEntries(local_log)
+					util.PrintLogEntries(local_log)
 				} else {
 					res := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: localLeaderID}}}
 					op.response <- res
@@ -264,10 +264,10 @@ func serve(s *util.KVStore, r *rand.Rand, peers *util.arrayPeers, id string, por
 						}
 						// log.Printf("local commit index is %v, local leader's commit index is %v",localCommitIndex, leader_commit)
 					}
-					util.printLogEntries(local_log)
+					util.PrintLogEntries(local_log)
 				}
 				// log.Printf("Done appending")
-				util.restartTimer(timer, r, false)
+				util.RestartTimer(timer, r, false)
 			case vr := <-pbft.VoteChan:
 				// log.Printf("We received a RequestVote RPC from a pbft peer")
 				// We received a RequestVote RPC from a pbft peer
@@ -308,7 +308,7 @@ func serve(s *util.KVStore, r *rand.Rand, peers *util.arrayPeers, id string, por
 				
 				// log.Printf("Exiting conditional check")
 				CurrState = "1"
-				util.restartTimer(timer, r, false) // ??
+				util.RestartTimer(timer, r, false) // ??
 
 				
 				// log.Printf("We received a RequestVote RPC from a pbft peer")
@@ -348,7 +348,7 @@ func serve(s *util.KVStore, r *rand.Rand, peers *util.arrayPeers, id string, por
 										appendResponseChan <- AppendResponse{ret: ret, err: err, peer: p, len_ae: int64(0), next_index: bufferNextIndex}
 									}(c, p)
 								}
-								util.restartTimer(timer, r, true)
+								util.RestartTimer(timer, r, true)
 							}
 						}
 					}	
