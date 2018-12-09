@@ -49,6 +49,20 @@ func (r *PbftLocal) RequestVote(ctx context.Context, arg *pb.RequestVoteArgs) (*
 	return &result, nil
 }
 
+func (r *PbftGlobal) AppendEntries(ctx context.Context, arg *pb.AppendEntriesArgs) (*pb.AppendEntriesRet, error) {
+	c := make(chan pb.AppendEntriesRet)
+	r.AppendChan <- AppendEntriesInput{arg: arg, response: c}
+	result := <-c
+	return &result, nil
+}
+
+func (r *PbftGlobal) RequestVote(ctx context.Context, arg *pb.RequestVoteArgs) (*pb.RequestVoteRet, error) {
+	c := make(chan pb.RequestVoteRet)
+	r.VoteChan <- VoteInput{arg: arg, response: c}
+	result := <-c
+	return &result, nil
+}
+
 // Compute a random duration in milliseconds
 func randomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 	// Constant
