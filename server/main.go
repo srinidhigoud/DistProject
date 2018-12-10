@@ -11,10 +11,10 @@ import (
 
 	"google.golang.org/grpc"
 
-	// "github.com/nyu-distributed-systems-fa18/DistProject/pb"
-	// "github.com/nyu-distributed-systems-fa18/DistProject/util"
-	"DistProject/pb"
-	"DistProject/util"
+	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	"github.com/nyu-distributed-systems-fa18/DistProject/util"
+	// "DistProject/pb"
+	// "DistProject/util"
 )
 
 func main() {
