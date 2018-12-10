@@ -7,14 +7,14 @@ import (
 
 	// "net"
 	"time"
-	// context "golang.org/x/net/context"
-	// "google.golang.org/grpc"
+	context "golang.org/x/net/context"
+	"google.golang.org/grpc"
 
-	// "github.com/nyu-distributed-systems-fa18/DistProject/pb"
-	// "github.com/nyu-distributed-systems-fa18/DistProject/util"
-	"DistProject/pb"
-	"DistProject/util"
-	"context"
+	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	"github.com/nyu-distributed-systems-fa18/DistProject/util"
+	// "DistProject/pb"
+	// "DistProject/util"
+	// "context"
 )
 
 // The main service loop. All modifications to the KV store are run through here.

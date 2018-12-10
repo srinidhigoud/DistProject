@@ -6,15 +6,15 @@ import (
 	"log"
 	"os"
 
-	// context "golang.org/x/net/context"
+	context "golang.org/x/net/context"
 	// "google.golang.org/grpc"
 
-	// "github.com/nyu-distributed-systems-fa18/DistProject/pb"
-	// "github.com/nyu-distributed-systems-fa18/DistProject/util"
-	"context"
+	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	"github.com/nyu-distributed-systems-fa18/DistProject/util"
+	//"context"
 	"google.golang.org/grpc"
-	"DistProject/pb"
-	"DistProject/util"
+	//"DistProject/pb"
+	//"DistProject/util"
 )
 
 type Validation struct {
