@@ -6,13 +6,20 @@ import (
 	rand "math/rand"
 	"net"
 	"time"
-	context "golang.org/x/net/context"
+
+	// context "golang.org/x/net/context"
+	"context"
+
 	"google.golang.org/grpc"
 
-	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	// "github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	"DistProject/pb"
 )
 
 // Messages that can be passed from the PbftLocal RPC server to the main loop for AppendEntries
+type AppendEntriesInput struct {
+}
+
 type AppendEntriesInput struct {
 	Arg      *pb.AppendEntriesArgs
 	Response chan pb.AppendEntriesRet
@@ -52,12 +59,10 @@ func (r *PbftGlobal) SendResponseBack(ctx context.Context, Arg *pb.ClientRespons
 	r.AppendChan <- Arg
 }
 
-
-
 // Compute a random duration in milliseconds
 func RandomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 	// Constant
-	if heartbeat{
+	if heartbeat {
 		const DurationMax = 5000
 		const DurationMin = 1000
 		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
@@ -66,9 +71,8 @@ func RandomDuration(r *rand.Rand, heartbeat bool) time.Duration {
 		const DurationMin = 10000
 		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 	}
-	
-}
 
+}
 
 // Restart the supplied timer using a random timeout based on function above
 func RestartTimer(timer *time.Timer, r *rand.Rand, heartbeat bool) {
@@ -84,8 +88,6 @@ func RestartTimer(timer *time.Timer, r *rand.Rand, heartbeat bool) {
 	}
 	timer.Reset(RandomDuration(r, heartbeat))
 }
-
-
 
 // Launch a GRPC service for this PbftLocal peer.
 func RunPbftLocalServer(r *PbftLocal, port int) {
@@ -130,9 +132,6 @@ func RunPbftGlobalServer(r *PbftGlobal, port int) {
 	}
 }
 
-
-
-
 func ConnectToPeer(peer string) (pb.PbftLocalClient, error) {
 	backoffConfig := grpc.DefaultBackoffConfig
 	// Choose an aggressive backoff strategy here.
@@ -144,7 +143,6 @@ func ConnectToPeer(peer string) (pb.PbftLocalClient, error) {
 	}
 	return pb.NewPbftLocalClient(conn), nil
 }
-
 
 func ConnectToClient(client string) (pb.PbftGlobalClient, error) {
 	backoffConfig := grpc.DefaultBackoffConfig
@@ -158,16 +156,14 @@ func ConnectToClient(client string) (pb.PbftGlobalClient, error) {
 	return pb.NewPbftGlobalClient(conn), nil
 }
 
-
 ////////////////////debug///////////////////
 func PrintLogEntries(local_log []*pb.Entry) {
 	// local_logs := ""
 	for idx, entry := range local_log {
 		// entryLog := "(" + string(entry.Index) + ", " + string(entry.Term) + ")"
 		ecmd := ""
-		log.Printf("local logs - ")	
-		switch c := entry.Cmd; 
-		c.Operation {
+		log.Printf("local logs - ")
+		switch c := entry.Cmd; c.Operation {
 		case pb.Op_GET:
 			ecmd = "Op_GET"
 		case pb.Op_SET:
@@ -177,7 +173,7 @@ func PrintLogEntries(local_log []*pb.Entry) {
 		case pb.Op_CAS:
 			ecmd = "Op_CAS"
 		}
-		log.Printf("idx %v log : Index %v Term %v Cmd %v", idx, entry.Index, entry.Term, ecmd)	
+		log.Printf("idx %v log : Index %v Term %v Cmd %v", idx, entry.Index, entry.Term, ecmd)
 		// local_logs = entryLog + " " + local_logs
 	}
 }

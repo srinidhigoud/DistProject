@@ -11,8 +11,10 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
-	"github.com/nyu-distributed-systems-fa18/DistProject/util"
+	// "github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	// "github.com/nyu-distributed-systems-fa18/DistProject/util"
+	"DistProject/pb"
+	"DistProject/util"
 )
 
 func main() {
@@ -32,7 +34,7 @@ func main() {
 	flag.Var(&peers, "peer", "A peer for this process")
 	// flag.Var(&clients, "client", "A client for this process")
 	flag.Parse()
-	// clients.Set("127.0.0.1:3008") 
+	// clients.Set("127.0.0.1:3008")
 	// Initialize the random number generator
 	if seed < 0 {
 		r = rand.New(rand.NewSource(time.Now().UnixNano()))
