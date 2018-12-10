@@ -7,13 +7,13 @@ import (
 	"net"
 	"time"
 
-	// context "golang.org/x/net/context"
-	"context"
+	context "golang.org/x/net/context"
+	// "context"
 
 	"google.golang.org/grpc"
 
-	// "github.com/nyu-distributed-systems-fa18/DistProject/pb"
-	"DistProject/pb"
+	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
+	// "DistProject/pb"
 )
 
 // Messages that can be passed from the PbftLocal RPC server to the main loop for AppendEntries
