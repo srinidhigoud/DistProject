@@ -54,10 +54,10 @@ message Result {
 // KvStore service
 service KvStore {
     // Get the value associated with a key.
-    rpc Get (Key) returns (Result) {}
-    rpc Set (KeyValue) returns (Result) {}
-    rpc Clear(Empty) returns (Result) {}
-    rpc CAS(CASArg) returns (Result) {}
+    rpc Get (Key) {}
+    rpc Set (KeyValue) {}
+    rpc Clear(Empty) {}
+    rpc CAS(CASArg) {}
 }
 
 // Internal representations for operations.
@@ -79,50 +79,105 @@ message Command {
     }
 }
 
-// A log entry
-message Entry {
-    int64 term = 1;
-    int64 index = 2;
-    Command cmd = 3;
+// // A log entry
+// message Entry {
+//     int64 term = 1;
+//     int64 index = 2;
+//     Command cmd = 3;
+// }
+
+// // Input to AppendEntries (as defined in Figure 2)
+// message AppendEntriesArgs {
+//     int64 term = 1;
+//     string leaderID = 2;
+//     int64 prevLogIndex = 3;
+//     int64 prevLogTerm = 4;
+//     int64 leaderCommit = 5;
+//     repeated Entry entries = 6;
+// }
+
+// // Output from AppendEntries
+// message AppendEntriesRet {
+//     int64 term = 1;
+//     bool success = 2;
+// }
+
+// // Input to RequestVote
+// message RequestVoteArgs {
+//     int64 term = 1;
+//     string candidateID = 2;
+//     int64 lastLogIndex = 3;
+//     int64 lasLogTerm = 4;
+// }
+
+// // Output from RequestVote
+// message RequestVoteRet {
+//     int64 term = 1;
+//     bool voteGranted = 2;
+// }
+
+//////////////////////////////PBFT//////////////////////////////
+message ClientRequest {
+    Command cmd = 1;
+    int64 timestamp = 2;
+    string clientID = 3;
 }
 
-// Input to AppendEntries (as defined in Figure 2)
-message AppendEntriesArgs {
-    int64 term = 1;
-    string leaderID = 2;
-    int64 prevLogIndex = 3;
-    int64 prevLogTerm = 4;
-    int64 leaderCommit = 5;
-    repeated Entry entries = 6;
+
+//viewId int64, timestamp int64, clientID string, node string, sequenceID int64)
+
+// Response to client
+message ClientResponse {
+    int64 viewId = 1;
+    int64 timestamp = 2;
+    string clientID = 3;
+    string node = 4;
+    Result nodeResult = 5;
+    int64 sequenceID = 6; 
 }
 
-// Output from AppendEntries
-message AppendEntriesRet {
-    int64 term = 1;
-    bool success = 2;
+message PrePrepareMsg {
+    int64 viewId = 1;
+    int64 sequenceID = 2;
+    string digest = 3;
+    ClientRequest request = 4;
+    string node = 5;
 }
 
-// Input to RequestVote
-message RequestVoteArgs {
-    int64 term = 1;
-    string candidateID = 2;
-    int64 lastLogIndex = 3;
-    int64 lasLogTerm = 4;
+message PrepareMsg {
+    int64 viewId = 1;
+    int64 sequenceID = 2;
+    string digest = 3;
+    string node = 4;
 }
 
-// Output from RequestVote
-message RequestVoteRet {
-    int64 term = 1;
-    bool voteGranted = 2;
+message CommitMsg {
+    int64 viewId = 1;
+    int64 sequenceID = 2;
+    string digest = 3;
+    string node = 4;
 }
 
-// PbftLocal service
-service PbftLocal {
-    rpc AppendEntries(AppendEntriesArgs) returns (AppendEntriesRet) {}
-    rpc RequestVote(RequestVoteArgs) returns (RequestVoteRet) {}
+
+message PbftMsgAccepted {
+    int64 viewId = 1;
+    int64 sequenceID = 2;
+    bool success = 3;
+    string typeOfAccepted = 4;
+    string node = 5;
 }
 
-service PbftGlobal {
-    rpc AppendEntries(AppendEntriesArgs) returns (AppendEntriesRet) {}
-    rpc RequestVote(RequestVoteArgs) returns (RequestVoteRet) {}
+message ViewChangeMsg {
+    string type = 1;
+    int64 newView = 2;
+    int64 lastSequenceID = 3;
+    string node = 5;
+}
+
+service Pbft {
+    rpc ClientRequestPBFT(ClientRequest) returns (ClientResponse) {}
+    rpc PrePreparePBFT(PrePrepareMsg) returns (PbftMsgAccepted) {}
+    rpc PreparePBFT(PrepareMsg) returns (PbftMsgAccepted) {}
+    rpc CommitPBFT(CommitMsg) returns (PbftMsgAccepted) {}
+    rpc ViewChangePBFT(ViewChangeMsg) returns (PbftMsgAccepted) {}
 }

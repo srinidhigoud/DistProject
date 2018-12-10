@@ -31,8 +31,7 @@ type PbftLocal struct {
 }
 
 type PbftGlobal struct {
-	AppendChan chan AppendEntriesInput
-	VoteChan   chan VoteInput
+	ResponseChan chan pb.ClientResponse
 }
 
 func (r *PbftLocal) AppendEntries(ctx context.Context, Arg *pb.AppendEntriesArgs) (*pb.AppendEntriesRet, error) {
@@ -49,19 +48,11 @@ func (r *PbftLocal) RequestVote(ctx context.Context, Arg *pb.RequestVoteArgs) (*
 	return &result, nil
 }
 
-func (r *PbftGlobal) AppendEntries(ctx context.Context, Arg *pb.AppendEntriesArgs) (*pb.AppendEntriesRet, error) {
-	c := make(chan pb.AppendEntriesRet)
-	r.AppendChan <- AppendEntriesInput{Arg: Arg, Response: c}
-	result := <-c
-	return &result, nil
+func (r *PbftGlobal) SendResponseBack(ctx context.Context, Arg *pb.ClientResponse) {
+	r.AppendChan <- Arg
 }
 
-func (r *PbftGlobal) RequestVote(ctx context.Context, Arg *pb.RequestVoteArgs) (*pb.RequestVoteRet, error) {
-	c := make(chan pb.RequestVoteRet)
-	r.VoteChan <- VoteInput{Arg: Arg, Response: c}
-	result := <-c
-	return &result, nil
-}
+
 
 // Compute a random duration in milliseconds
 func RandomDuration(r *rand.Rand, heartbeat bool) time.Duration {

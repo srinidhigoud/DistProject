@@ -20,7 +20,7 @@ func main() {
 	var r *rand.Rand
 	var seed int64
 	var peers util.ArrayPeers
-	var clients util.ArrayClients
+	// var clients util.ArrayClients
 	var clientPort int
 	var pbftPort int
 	flag.Int64Var(&seed, "seed", -1,
@@ -32,7 +32,7 @@ func main() {
 	flag.Var(&peers, "peer", "A peer for this process")
 	// flag.Var(&clients, "client", "A client for this process")
 	flag.Parse()
-	clients.Set("127.0.0.1:3008") 
+	// clients.Set("127.0.0.1:3008") 
 	// Initialize the random number generator
 	if seed < 0 {
 		r = rand.New(rand.NewSource(time.Now().UnixNano()))
