@@ -54,10 +54,10 @@ message Result {
 // KvStore service
 service KvStore {
     // Get the value associated with a key.
-    rpc Get (Key) returns () {}
-    rpc Set (KeyValue) returns () {}
-    rpc Clear(Empty) returns () {}
-    rpc CAS(CASArg) returns () {}
+    rpc Get (Key) returns (Success) {}
+    rpc Set (KeyValue) returns (Success) {}
+    rpc Clear(Empty) returns (Success) {}
+    rpc CAS(CASArg) returns (Success) {}
 }
 
 // Internal representations for operations.
