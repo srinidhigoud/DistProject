@@ -227,7 +227,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 	pbft := util.Pbft{PrePrepareMsgChan: make(chan util.PrePrepareMsgInput), PrepareMsgChan: make(chan util.PrepareMsgInput), CommitMsgChan: make(chan util.CommitMsgInput), ViewChangeMsgChan: make(chan util.ViewChangeMsgInput), ResponseChan: make(chan *pb.ClientResponse)}
 	go util.RunPbftServer(&pbft, port)
 	peerClients := make(map[string]pb.PbftClient)
-	numberOfPeers := 1
+	numberOfPeers := int64(1)
 	for _, peer := range *peers {
 		numberOfPeers += 1
 		log.Printf("peer address - %v", peer)
