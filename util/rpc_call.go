@@ -49,7 +49,6 @@ type Pbft struct {
 }
 
 func (r *Pbft) PrePreparePBFT(ctx context.Context, arg *pb.PrePrepareMsg) (*pb.Success, error) {
-	log.Printf("Got a preprepare request from the leader")
 	r.PrePrepareMsgChan <- PrePrepareMsgInput{Arg: arg}
 	result := pb.Success{}
 	return &result, nil

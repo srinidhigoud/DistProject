@@ -319,6 +319,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				log.Printf("Received PrePrepareMsgChan %v from primary %v", pbftPrePrep.Arg, pbftPrePrep.Arg.Node)
 				printPrePrepareMsg(*prePrepareMsg, currentView, seqId)
 				verified := verifyPrePrepare(prePrepareMsg, currentView, seqId, logEntries)
+				log.Printf("Done prepreparing")
 				if verified {
 					digest := prePrepareMsg.Digest
 					if isByzantine {
