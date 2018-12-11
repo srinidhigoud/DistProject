@@ -4,6 +4,7 @@ import (
 	// "fmt"
 	"log"
 	rand "math/rand"
+	"strconv"
 
 	// "net"
 	"time"
@@ -97,6 +98,9 @@ func verifyPrepare(prepareMsg *pb.PrepareMsg, viewId int64, sequenceID int64, lo
 			return false
 		}
 	}
+	if prepareMsg.SequenceID+1 > int64(len(logEntries)) {
+		return false
+	}
 	digest := logEntries[prepareMsg.SequenceID].prePrep.Digest
 	if digest != prepareMsg.Digest {
 		return false
@@ -121,15 +125,50 @@ func verifyCommit(commitMsg *pb.CommitMsg, viewId int64, sequenceID int64, logEn
 }
 
 func isPrepared(entry logEntry) bool {
-	return len(entry.pre) >= 2
+	prePrepareMsg := entry.prePrep
+	if prePrepareMsg != nil {
+		validPrepares := 0
+		for i := 0; i < len(entry.pre); i++ {
+			prepareMsg := entry.pre[i]
+			if prepareMsg.ViewId == prePrepareMsg.ViewId && prepareMsg.SequenceID == prePrepareMsg.SequenceID && prepareMsg.Digest == prePrepareMsg.Digest {
+				validPrepares += 1
+			}
+		}
+		return validPrepares >= 2
+	}
+	return false
 }
 
 func isCommitted(entry logEntry) bool {
-	return len(entry.com) >= 2
+	prepared := isPrepared(entry)
+	if prepared {
+		prePrepareMsg := entry.prePrep
+		validCommits := 0
+		for i := 0; i < len(entry.com); i++ {
+			commitMsg := entry.com[i]
+			if commitMsg.ViewId == prePrepareMsg.ViewId && commitMsg.SequenceID == prePrepareMsg.SequenceID && commitMsg.Digest == prePrepareMsg.Digest {
+				validCommits += 1
+			}
+		}
+		return validCommits >= 2
+	}
+	return false
 }
 
 func isCommittedLocal(entry logEntry) bool {
-	return len(entry.com) >= 3
+	committed := isCommitted(entry)
+	if committed {
+		prePrepareMsg := entry.prePrep
+		validCommits := 0
+		for i := 0; i < len(entry.com); i++ {
+			commitMsg := entry.com[i]
+			if commitMsg.ViewId == prePrepareMsg.ViewId && commitMsg.SequenceID == prePrepareMsg.SequenceID && commitMsg.Digest == prePrepareMsg.Digest {
+				validCommits += 1
+			}
+		}
+		return validCommits >= 3
+	}
+	return false
 }
 
 func printMyStoreAndLog(logEntries []logEntry, s *KVStore, currentView int64, seqId int64) {
@@ -239,10 +278,27 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			newView := pbftVc.Arg.NewView
 			if pbftVc.Arg.Type == "new-view" {
 				log.Printf("Switching to new view - %v || %v", newView, pbftVc)
+				// Should send back redirect here for commands that weren't committed
+				iWasLeader := currentView == myId
 				currentView = newView
 				transitionPhase = false
 				numberOfVotes = 0
 				seqId = pbftVc.Arg.LastSequenceID
+
+				if iWasLeader {
+					result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(newView+3001, 10)}}}
+					clientID := logEntries[len(logEntries)-1].clientReq.ClientID
+					client, err := util.ConnectToClient(clientID) //client connection
+					if err != nil {
+						log.Fatalf("Failed to connect to GRPC server %v", err)
+					}
+					log.Printf("Connected to %v", clientID)
+					go func(c pb.PbftClient) {
+						c.SendResponseBack(context.Background(),
+							&pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)})
+					}(client)
+					log.Printf("Send Back Redirect message - View Change")
+				}
 			} else {
 				if newView == myId {
 					log.Printf("Received vote from %v", pbftVc.Arg.Node)
@@ -255,11 +311,11 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			if numberOfVotes >= 2 {
 				viewChangeTimer.Stop()
 				log.Printf("Switching to new view - %v and taking on as primary", newView)
-				viewChange := pb.ViewChangeMsg{Type: "new-view", NewView: newView, LastSequenceID: seqId - 1, Node: id}
+				viewChange := pb.ViewChangeMsg{Type: "new-view", NewView: newView, LastSequenceID: seqId - 1, Node: strconv.FormatInt(myId+3001, 10)}
 				for p, c := range peerClients {
 					go func(c pb.PbftClient, p string) {
 						_, _ = c.ViewChangePBFT(context.Background(), &viewChange)
-						// pbftMsgAcceptedChan <- PbftMsgAccepted{ret: _, _: err, peer: p}
+						// pbftMsgAcceptedChan <- PbftMsgAccepted{ret: ret, err: err, peer: p}
 					}(c, p)
 				}
 				transitionPhase = false
@@ -309,7 +365,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			} else {
 				log.Printf("Received ClientRequestChan %v", clientReq.ClientID)
 				log.Printf("But.....Requested View Change")
-				log.Printf("Send Back Redirect message - View Change")
+				// log.Printf("Send Back Redirect message - View Change")
 			}
 		case pbftPrePrep := <-pbft.PrePrepareMsgChan:
 			prePrepareMsg := pbftPrePrep.Arg
@@ -321,16 +377,14 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					viewChangeTimer.Reset(dur)
 				}
 				log.Printf("Received PrePrepareMsgChan %v from primary %v", pbftPrePrep.Arg, pbftPrePrep.Arg.Node)
-				// printPrePrepareMsg(*prePrepareMsg, currentView, seqId)
+				printPrePrepareMsg(*prePrepareMsg, currentView, seqId)
 				verified := verifyPrePrepare(prePrepareMsg, currentView, seqId, logEntries)
 				if verified {
-					log.Printf("Done verifying")
 					digest := prePrepareMsg.Digest
 					if isByzantine {
 						digest = tamper(digest)
 					}
-					prepareMsg := pb.PrepareMsg{ViewId: prePrepareMsg.ViewId, SequenceID: prePrepareMsg.SequenceID, Digest: digest, Node: id}
-
+					prepareMsg := pb.PrepareMsg{ViewId: prePrepareMsg.ViewId, SequenceID: prePrepareMsg.SequenceID, Digest: digest, Node: strconv.FormatInt(myId+3001, 10)}
 					if prePrepareMsg.SequenceID+1 <= int64(len(logEntries)) {
 						log.Printf("Had received a prepare msg before, so writing on previous seqId - %v", prePrepareMsg.SequenceID)
 						oldEntry := logEntries[prePrepareMsg.SequenceID]
@@ -352,11 +406,11 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						go func(c pb.PbftClient, p string) {
 							// time.Sleep(10 * time.Millisecond)
 							_, _ = c.PreparePBFT(context.Background(), &prepareMsg)
-							// pbftMsgAcceptedChan <- PbftMsgAccepted{ret: _, _: err, peer: p}
+							// pbftMsgAcceptedChan <- PbftMsgAccepted{ret: ret, err: err, peer: p}
 						}(c, p)
 					}
 				}
-				// responseBack := pb.PbftMsgAccepted{ViewId: currentView, SequenceID: seqId, Success: verified, TypeOfAccepted: "pre-prepare", Node: id}
+				// responseBack := pb.PbftMsgAccepted{ViewId: currentView, SequenceID: seqId, Success: verified, TypeOfAccepted: "pre-prepare", Node: strconv.FormatInt(myId+3001, 10)}
 				printMyStoreAndLog(logEntries, s, currentView, seqId)
 				// pbftPrePrep.Response <- responseBack
 			} else {
@@ -376,9 +430,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						log.Printf("Resetting timer for duration - %v", dur)
 						viewChangeTimer.Reset(dur)
 					}
-
 					prepared := false
-
 					if prepareMsg.SequenceID+1 <= int64(len(logEntries)) {
 						log.Printf("Normal case received pre-prepare before prepare - writing to entry in logs at - %v", prepareMsg.SequenceID)
 						oldEntry := logEntries[prepareMsg.SequenceID]
@@ -397,18 +449,17 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						newEntry.pre = oldPrepares
 						logEntries = append(logEntries, newEntry)
 					}
-
 					if prepared {
 						digest := prepareMsg.Digest
 						if isByzantine {
 							digest = tamper(digest)
 						}
-						commitMsg := pb.CommitMsg{ViewId: prepareMsg.ViewId, SequenceID: prepareMsg.SequenceID, Digest: prepareMsg.Digest, Node: id}
+						commitMsg := pb.CommitMsg{ViewId: prepareMsg.ViewId, SequenceID: prepareMsg.SequenceID, Digest: prepareMsg.Digest, Node: strconv.FormatInt(myId+3001, 10)}
 						for p, c := range peerClients {
 							go func(c pb.PbftClient, p string) {
 								// time.Sleep(100 * time.Millisecond)
 								_, _ = c.CommitPBFT(context.Background(), &commitMsg)
-								// pbftMsgAcceptedChan <- PbftMsgAccepted{ret: _, _: err, peer: p}
+								// pbftMsgAcceptedChan <- PbftMsgAccepted{ret: ret, err: err, peer: p}
 							}(c, p)
 						}
 						oldEntry := logEntries[prepareMsg.SequenceID]
@@ -418,7 +469,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						logEntries[prepareMsg.SequenceID] = oldEntry
 					}
 				}
-				// responseBack := pb.PbftMsgAccepted{ViewId: currentView, SequenceID: seqId, Success: verified, TypeOfAccepted: "prepare", Node: id}
+				// responseBack := pb.PbftMsgAccepted{ViewId: currentView, SequenceID: seqId, Success: verified, TypeOfAccepted: "prepare", Node: strconv.FormatInt(myId+3001, 10)}
 				printMyStoreAndLog(logEntries, s, currentView, seqId)
 				// pbftPre.Response <- responseBack
 			} else {
@@ -449,7 +500,6 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					oldEntry.committedLocal = committedLocal
 					logEntries[commitMsg.SequenceID] = oldEntry
 					if committedLocal {
-						// util.StopTimer(timer)
 						viewChangeTimer.Stop()
 						// Execute and finally send back to client to aggregate
 						clr := oldEntry.clientReq
@@ -458,24 +508,24 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						// operation := op[0]
 						// key := op[1]
 						// val := op[2]
-						// res := pb.Result{Result: &pb.Result_S{S: &pb.Success{}}}
+						// res := pb.Result{Result: &pb.Result_S{S: &pb.Success{IsSuccessful: true}}}
 						// if operation == "set" {
-						// 	s.store[key] = val
+						// 	kvs.Store[key] = val
 						// 	res = pb.Result{Result: &pb.Result_Kv{Kv: &pb.KeyValue{Key: key, Value: val}}}
 						// } else if operation == "get" {
-						// 	val = s.store[key]
+						// 	val = kvs.Store[key]
 						// 	res = pb.Result{Result: &pb.Result_Kv{Kv: &pb.KeyValue{Key: key, Value: val}}}
 						// }
 						// clr.NodeResult = &res
-						// clr.ClientID = id
+						// clr.ClientID = strconv.FormatInt(myId+3001, 10)
 						// clr.SequenceID = commitMsg.SequenceID
 						// go func(c pb.PbftClient) {
-						// 	_, _ = c.ClientRequestPBFT(context.Background(), clr)
-						// 	clientResponseChan <- ClientResponse{ret: _, _: err, node: id}
+						// 	ret, err := c.ClientRequestPBFT(context.Background(), clr)
+						// 	clientResponseChan <- ClientResponse{ret: ret, err: err, node: strconv.FormatInt(myId+3001, 10)}
 						// }(clientConn)
 					}
 				}
-				// responseBack := pb.PbftMsgAccepted{ViewId: currentView, SequenceID: seqId, Success: verified, TypeOfAccepted: "commit", Node: id}
+				// responseBack := pb.PbftMsgAccepted{ViewId: currentView, SequenceID: seqId, Success: verified, TypeOfAccepted: "commit", Node: strconv.FormatInt(myId+3001, 10)}
 				printMyStoreAndLog(logEntries, s, currentView, seqId)
 				// pbftCom.Response <- responseBack
 			} else {

@@ -45,7 +45,7 @@ func compare(v1 Validation, v2 Validation) bool {
 	// return false
 }
 
-func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft) (*pb.Result, error) {
+func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft) (*pb.Result, error, string) {
 	numberOfValidResponses := int64(0)
 	val := pb.Result{}
 	for numberOfValidResponses < 2 { //lot of changes required for a better performance
@@ -53,7 +53,11 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 		select {
 		case res := <-r.ResponseChan:
 			log.Printf("got a response")
-			if v := mapS[res.SequenceID]; v < 2 {
+			if res.SequenceID < 0 {
+				primary := res.NodeResult.GetRedirect().GetServer()
+
+				return &val, nil, primary
+			} else if v := mapS[res.SequenceID]; v < 2 {
 				log.Printf("got in") //res.NodeResult.GetKv().Key
 				check := Validation{t: res.Timestamp, res: *res.NodeResult}
 				if v > 0 {
@@ -76,7 +80,7 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 			// 	continue
 		}
 	}
-	return &val, nil
+	return &val, nil, ""
 }
 
 func main() {
@@ -111,6 +115,8 @@ func main() {
 	// Create a KvStore client
 	kvc := pb.NewKvStoreClient(conn)
 	port := 3008
+	res := &pb.Result{}
+	newprimary := ""
 	pbft := util.Pbft{PrePrepareMsgChan: make(chan util.PrePrepareMsgInput), PrepareMsgChan: make(chan util.PrepareMsgInput), CommitMsgChan: make(chan util.CommitMsgInput), ViewChangeMsgChan: make(chan util.ViewChangeMsgInput), ResponseChan: make(chan *pb.ClientResponse)}
 	go util.RunPbftServer(&pbft, port)
 	//&pb.ClientRequest{cmd: ,timestamp: time_now,clientID: id}
@@ -123,10 +129,26 @@ func main() {
 	c := pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for clearing")
-	res, err := acceptResult(mappedSeq, mappedVal, &pbft)
-	if err != nil {
-		log.Fatalf("Could not clear")
+
+	for {
+		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
+		if err != nil {
+			log.Fatalf("Could not clear")
+			break
+		} else if newprimary == "" {
+			break
+		} else {
+			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for clearing")
+		}
 	}
+
 	log.Printf("Done clearing")
 
 	// Put setting hello -> 1
@@ -136,9 +158,23 @@ func main() {
 	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for putting")
-	res, err = acceptResult(mappedSeq, mappedVal, &pbft)
-	if err != nil {
-		log.Fatalf("Put error")
+	for {
+		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
+		if err != nil {
+			log.Fatalf("Put error")
+			break
+		} else if newprimary == "" {
+			break
+		} else {
+			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for clearing")
+		}
 	}
 	log.Printf("Done putting")
 	log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
@@ -153,9 +189,23 @@ func main() {
 	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for getting")
-	res, err = acceptResult(mappedSeq, mappedVal, &pbft)
-	if err != nil {
-		log.Fatalf("Request error %v", err)
+	for {
+		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
+		if err != nil {
+			log.Fatalf("Request error %v", err)
+			break
+		} else if newprimary == "" {
+			break
+		} else {
+			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for clearing")
+		}
 	}
 	log.Printf("Done getting")
 	log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
@@ -170,9 +220,23 @@ func main() {
 	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for CASing")
-	res, err = acceptResult(mappedSeq, mappedVal, &pbft)
-	if err != nil {
-		log.Fatalf("Request error %v", err)
+	for {
+		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
+		if err != nil {
+			log.Fatalf("Request error %v", err)
+			break
+		} else if newprimary == "" {
+			break
+		} else {
+			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for clearing")
+		}
 	}
 	log.Printf("Done CASing")
 	log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
@@ -187,9 +251,23 @@ func main() {
 	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for CASing")
-	res, err = acceptResult(mappedSeq, mappedVal, &pbft)
-	if err != nil {
-		log.Fatalf("Request error %v", err)
+	for {
+		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
+		if err != nil {
+			log.Fatalf("Request error %v", err)
+			break
+		} else if newprimary == "" {
+			break
+		} else {
+			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for clearing")
+		}
 	}
 	log.Printf("Done CASing")
 	log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
@@ -204,9 +282,23 @@ func main() {
 	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for CASing")
-	res, err = acceptResult(mappedSeq, mappedVal, &pbft)
-	if err != nil {
-		log.Fatalf("Request error %v", err)
+	for {
+		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
+		if err != nil {
+			log.Fatalf("Request error %v", err)
+			break
+		} else if newprimary == "" {
+			break
+		} else {
+			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for clearing")
+		}
 	}
 	log.Printf("Done CASing")
 	log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
