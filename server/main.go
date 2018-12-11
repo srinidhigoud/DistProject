@@ -6,6 +6,7 @@ import (
 	"log"
 	rand "math/rand"
 	"net"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -42,13 +43,13 @@ func main() {
 	}
 
 	// Get hostname
-	// name, err := os.Hostname()
-	// if err != nil {
-	// 	// Without a host name we can't really get an ID, so die.
-	// 	log.Fatalf("Could not get hostname")
-	// }
+	name, err := os.Hostname()
+	if err != nil {
+		// Without a host name we can't really get an ID, so die.
+		log.Fatalf("Could not get hostname")
+	}
 
-	id := fmt.Sprintf("%d", pbftPort)
+	id := fmt.Sprintf("%s:%d", name, pbftPort)
 	log.Printf("Starting peer with ID %s", id)
 
 	// Convert port to a string form
