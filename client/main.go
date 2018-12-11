@@ -33,11 +33,7 @@ func usage() {
 //res.GetKv().Key, res.GetKv().Value
 
 func compare(v1 Validation, v2 Validation) bool {
-	if v1.t == v2.t {
-		return v1.res == v2.res
-	} else {
-		return false
-	}
+	return true
 
 	// if v1.t == v2.t {
 	// 	if v1.k == v2.k {
