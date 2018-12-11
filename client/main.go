@@ -96,7 +96,7 @@ func main() {
 		log.Fatalf("Could not get hostname")
 	}
 	id := fmt.Sprintf("%s:%d", name, pbftPort)
-	log.Printf("Starting the client with ID %s")
+	log.Printf("Starting the client with ID %s", id)
 	log.Printf("Connecting to %v", primary)
 
 	// Connect to the server. We use WithInsecure since we do not configure https in this class.
