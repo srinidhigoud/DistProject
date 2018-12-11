@@ -66,22 +66,25 @@ type logEntry struct {
 
 func reqValidPrepare(n int64) int64 {
 	f := (n - 1) / 3
+	log.Printf("%v --------------------------------", f)
 	return 2 * f
 }
 
 func reqValidCommit(n int64) int64 {
 	f := (n - 1) / 3
+	log.Printf("%v --------------------------------", f)
 	return 1 + f
 }
 
 func reqValidCommitLocal(n int64) int64 {
 	f := (n - 1) / 3
+	log.Printf("%v --------------------------------", f)
 	return 2*f + 1
 }
 
 func reqValidVC(n int64) int64 {
 	f := (n - 1) / 3
-	log.Printf("%v", f)
+	log.Printf("%v --------------------------------", f)
 	return 2 * f
 }
 
