@@ -70,8 +70,8 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 				}
 
 			}
-		default:
-			continue
+			// default:
+			// 	continue
 		}
 	}
 	return &val, nil
