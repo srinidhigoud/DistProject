@@ -50,6 +50,7 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 	for numberOfValidResponses < 2 { //lot of changes required for a better performance
 		select {
 		case res := <-r.ResponseChan:
+			log.Printf("got a response")
 			if v := mapS[res.SequenceID]; v < 2 {
 				check := Validation{t: res.Timestamp, k: res.NodeResult.GetKv().Key, v: res.NodeResult.GetKv().Value}
 				if v > 0 {
