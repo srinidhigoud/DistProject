@@ -23,22 +23,18 @@ import (
 
 type PrePrepareMsgInput struct {
 	Arg *pb.PrePrepareMsg
-	// Response chan pb.PbftMsgAccepted
 }
 
 type PrepareMsgInput struct {
 	Arg *pb.PrepareMsg
-	// Response chan pb.PbftMsgAccepted
 }
 
 type CommitMsgInput struct {
 	Arg *pb.CommitMsg
-	// Response chan pb.PbftMsgAccepted
 }
 
 type ViewChangeMsgInput struct {
 	Arg *pb.ViewChangeMsg
-	// Response chan pb.PbftMsgAccepted
 }
 type Pbft struct {
 	PrePrepareMsgChan chan PrePrepareMsgInput
@@ -93,15 +89,6 @@ func RestartTimer(timer *time.Timer, r *rand.Rand) {
 		}
 	}
 	timer.Reset(RandomDuration(r))
-}
-
-func StopTimer(timer *time.Timer) {
-	stopped := timer.Stop()
-	if !stopped {
-		for len(timer.C) > 0 {
-			<-timer.C
-		}
-	}
 }
 
 type SecondsTimer struct {
@@ -184,26 +171,26 @@ func ConnectToClient(client string) (pb.PbftClient, error) {
 }
 
 ////////////////////debug///////////////////
-func PrintLogEntries(local_log []*pb.Entry) {
-	// local_logs := ""
-	for idx, entry := range local_log {
-		// entryLog := "(" + string(entry.Index) + ", " + string(entry.Term) + ")"
-		ecmd := ""
-		log.Printf("local logs - ")
-		switch c := entry.Cmd; c.Operation {
-		case pb.Op_GET:
-			ecmd = "Op_GET"
-		case pb.Op_SET:
-			ecmd = "Op_SET"
-		case pb.Op_CLEAR:
-			ecmd = "Op_CLEAR"
-		case pb.Op_CAS:
-			ecmd = "Op_CAS"
-		}
-		log.Printf("idx %v log : Index %v Term %v Cmd %v", idx, entry.Index, entry.Term, ecmd)
-		// local_logs = entryLog + " " + local_logs
-	}
-}
+// func PrintLogEntries(local_log []*pb.Entry) {
+// 	// local_logs := ""
+// 	for idx, entry := range local_log {
+// 		// entryLog := "(" + string(entry.Index) + ", " + string(entry.Term) + ")"
+// 		ecmd := ""
+// 		log.Printf("local logs - ")
+// 		switch c := entry.Cmd; c.Operation {
+// 		case pb.Op_GET:
+// 			ecmd = "Op_GET"
+// 		case pb.Op_SET:
+// 			ecmd = "Op_SET"
+// 		case pb.Op_CLEAR:
+// 			ecmd = "Op_CLEAR"
+// 		case pb.Op_CAS:
+// 			ecmd = "Op_CAS"
+// 		}
+// 		log.Printf("idx %v log : Index %v Term %v Cmd %v", idx, entry.Index, entry.Term, ecmd)
+// 		// local_logs = entryLog + " " + local_logs
+// 	}
+// }
 
 func Hash(content []byte) string {
 	h := sha256.New()
@@ -211,7 +198,7 @@ func Hash(content []byte) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func Digest(object interface{}) string {
+func Digest(object interface{}, tamperIt bool) string {
 	msg, err := json.Marshal(object)
 	if err != nil {
 		// return "", err
