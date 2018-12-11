@@ -250,7 +250,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 	vcTimer.Stop()
 
 	viewChangePhase := false
-	numberOfVotes := 0
+	numberOfVotes := int64(0)
 
 	for {
 		select {
