@@ -276,33 +276,33 @@ func main() {
 	}
 
 	// CAS should fail for uninitialized variables
-	time_now = time.Now().UnixNano()
-	in6 := &pb.CASArg{Kv: &pb.KeyValue{Key: "hellooo", Value: "1"}, Value: &pb.Value{Value: "2"}}
-	r = pb.Command{Operation: pb.Op_CAS, Arg: &pb.Command_Cas{Cas: in6}}
-	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
-	kvc.Call(context.Background(), &c)
-	log.Printf("Waiting for CASing")
-	for {
-		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
-		if err != nil {
-			log.Fatalf("Request error %v", err)
-			break
-		} else if newprimary == "" {
-			break
-		} else {
-			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
-			if err != nil {
-				log.Fatalf("Failed to dial GRPC server %v", err)
-			}
-			log.Printf("Connected")
-			kvc = pb.NewKvStoreClient(conn)
-			kvc.Call(context.Background(), &c)
-			log.Printf("Waiting for clearing")
-		}
-	}
-	log.Printf("Done CASing")
-	log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
-	if res.GetKv().Key != "hellooo" || res.GetKv().Value == "2" {
-		log.Fatalf("Get returned the wrong response")
-	}
+	// time_now = time.Now().UnixNano()
+	// in6 := &pb.CASArg{Kv: &pb.KeyValue{Key: "hellooo", Value: "1"}, Value: &pb.Value{Value: "2"}}
+	// r = pb.Command{Operation: pb.Op_CAS, Arg: &pb.Command_Cas{Cas: in6}}
+	// c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
+	// kvc.Call(context.Background(), &c)
+	// log.Printf("Waiting for CASing")
+	// for {
+	// 	res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
+	// 	if err != nil {
+	// 		log.Fatalf("Request error %v", err)
+	// 		break
+	// 	} else if newprimary == "" {
+	// 		break
+	// 	} else {
+	// 		conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+	// 		if err != nil {
+	// 			log.Fatalf("Failed to dial GRPC server %v", err)
+	// 		}
+	// 		log.Printf("Connected")
+	// 		kvc = pb.NewKvStoreClient(conn)
+	// 		kvc.Call(context.Background(), &c)
+	// 		log.Printf("Waiting for clearing")
+	// 	}
+	// }
+	// log.Printf("Done CASing")
+	// log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
+	// if res.GetKv().Key != "hellooo" || res.GetKv().Value == "2" {
+	// 	log.Fatalf("Get returned the wrong response")
+	// }
 }
