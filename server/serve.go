@@ -214,7 +214,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 	for {
 		select {
 		case <-timer.C:
-			printMyStoreAndLog(logEntries, s, currentView, seqId)
+			// printMyStoreAndLog(logEntries, s, currentView, seqId)
 			util.RestartTimer(timer, r)
 		case <-viewChangeTimer.Timer.C:
 			newView := (currentView + 1) % 4
