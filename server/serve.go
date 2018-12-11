@@ -81,6 +81,7 @@ func reqValidCommitLocal(n int64) int64 {
 
 func reqValidVC(n int64) int64 {
 	f := (n - 1) / 3
+	log.Printf("%v", f)
 	return 2 * f
 }
 
