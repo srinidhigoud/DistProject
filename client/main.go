@@ -54,9 +54,9 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 		case res := <-r.ResponseChan:
 			log.Printf("got a response")
 			if res.SequenceID < 0 {
-				
+
 				primary := res.NodeResult.GetRedirect().GetServer()
-				log.Printf("redirect now to %v,"primary)
+				log.Printf("redirect now to %v", primary)
 				return &val, nil, primary
 			} else if v := mapS[res.SequenceID]; v < 2 {
 				log.Printf("got in") //res.NodeResult.GetKv().Key
