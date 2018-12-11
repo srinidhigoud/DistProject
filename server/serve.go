@@ -68,11 +68,12 @@ type logEntry struct {
 func verifyPrePrepare(prePrepareMsg *pb.PrePrepareMsg, viewId int64, sequenceID int64, logEntries []logEntry) bool {
 
 	if prePrepareMsg.ViewId != viewId {
-		log.Printf("here")
+		log.Printf("here1")
 		return false
 	}
 	if sequenceID != -1 {
 		if sequenceID > prePrepareMsg.SequenceID {
+			log.Printf("here2")
 			return false
 		}
 	}
@@ -81,6 +82,7 @@ func verifyPrePrepare(prePrepareMsg *pb.PrePrepareMsg, viewId int64, sequenceID 
 	// }
 	digest := util.Digest(prePrepareMsg.Request)
 	if digest != prePrepareMsg.Digest {
+		log.Printf("here3")
 		return false
 	}
 	return true
