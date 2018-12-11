@@ -142,7 +142,7 @@ func verifyCommit(commitMsg *pb.CommitMsg, viewId int64, sequenceID int64, logEn
 func isPrepared(entry logEntry, n int64) bool {
 	prePreMsg := entry.prePrep
 	if prePreMsg != nil {
-		validPrepares := 0
+		validPrepares := int64(0)
 		for i := 0; i < len(entry.pre); i++ {
 			prepareMsg := entry.pre[i]
 			if prepareMsg.ViewId == prePreMsg.ViewId && prepareMsg.SequenceID == prePreMsg.SequenceID && prepareMsg.Digest == prePreMsg.Digest {
@@ -158,7 +158,7 @@ func isCommitted(entry logEntry, n int64) bool {
 	prepared := isPrepared(entry, n)
 	if prepared {
 		prePreMsg := entry.prePrep
-		validCommits := 0
+		validCommits := int64(0)
 		for i := 0; i < len(entry.com); i++ {
 			commitMsg := entry.com[i]
 			if commitMsg.ViewId == prePreMsg.ViewId && commitMsg.SequenceID == prePreMsg.SequenceID && commitMsg.Digest == prePreMsg.Digest {
@@ -174,7 +174,7 @@ func isCommittedLocal(entry logEntry, n int64) bool {
 	committed := isCommitted(entry, n)
 	if committed {
 		prePreMsg := entry.prePrep
-		validCommits := 0
+		validCommits := int64(0)
 		for i := 0; i < len(entry.com); i++ {
 			commitMsg := entry.com[i]
 			if commitMsg.ViewId == prePreMsg.ViewId && commitMsg.SequenceID == prePreMsg.SequenceID && commitMsg.Digest == prePreMsg.Digest {
@@ -287,7 +287,6 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			} else {
 				log.Printf("Received ClientRequestChan %v", cr.ClientID)
 				log.Printf("But.....Requested View Change")
-				// log.Printf("Send Back Redirect message - View Change")
 			}
 		case <-vcTimer.Timer.C:
 			newView := (currentView + 1) % numberOfPeers
@@ -307,13 +306,12 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			if vc.Arg.Type == "new-view" {
 				log.Printf("Switching to new view - %v || %v", newView, vc)
 				// Should send back redirect here for commands that weren't committed
-				iWasLeader := currentView == nodeID
 				currentView = newView
 				viewChangePhase = false
-				numberOfVotes = 0
+				numberOfVotes = int64(0)
 				curreSeqID = vc.Arg.LastSequenceID
 
-				if iWasLeader {
+				if currentView == nodeID {
 					result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(newView+3001, 10)}}}
 					clientID := logEntries[len(logEntries)-1].clientReq.ClientID
 					client, err := util.ConnectToClient(clientID) //client connection
@@ -484,7 +482,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				}
 				printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 			} else {
-				log.Printf("Received CommitMsgChan %v", commitMsg.Node)
+				log.Printf("Received CommitMsgChan %v", c.Arg.Node)
 				log.Printf("But.....Requested View Change")
 				log.Printf("Send Back Redirect message - View Change")
 			}
