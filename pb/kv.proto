@@ -165,6 +165,17 @@ message ClientResponse {
     int64 sequenceID = 6; 
 }
 
+// message Msg {
+//     string operation = 1;
+//     oneof arg {
+//         PrePrepareMsg ppm = 2;
+//         PrepareMsg pm = 3;
+//         CommitMsg cm = 4;
+//         ViewChangeMsg vcm = 5;
+//         ClientResponse crm = 6;
+//     }
+// }
+
 service Pbft {
     rpc PrePreparePBFT(PrePrepareMsg) returns (Success) {}
     rpc PreparePBFT(PrepareMsg) returns (Success) {}
