@@ -35,8 +35,10 @@ func usage() {
 func compare(v1 Validation, v2 Validation) bool {
 	if v1.t == v2.t {
 		return v1.res == v2.res
-	} else return false
-	
+	} else {
+		return false
+	}
+
 	// if v1.t == v2.t {
 	// 	if v1.k == v2.k {
 	// 		if v1.v == v2.v {
