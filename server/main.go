@@ -65,7 +65,7 @@ func main() {
 
 	// Initialize KVStore
 	store := KVStore{C: make(chan InputChannelType), store: make(map[string]string)}
-	go serve(&store, r, &peers, &clients, id, pbftPort)
+	go serve(&store, r, &peers, id, pbftPort, true)
 
 	// Tell GRPC that s will be serving requests for the KvStore service and should use store (defined on line 23)
 	// as the struct whose methods should be called in Response.

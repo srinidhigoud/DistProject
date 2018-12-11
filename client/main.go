@@ -5,34 +5,38 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	context "golang.org/x/net/context"
 	// "google.golang.org/grpc"
 
 	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
 	"github.com/nyu-distributed-systems-fa18/DistProject/util"
-	//"context"
+
+	// "DistProject/pb"
+	// "DistProject/util"
+	// "context"
+
 	"google.golang.org/grpc"
-	//"DistProject/pb"
-	//"DistProject/util"
 )
 
 type Validation struct {
-	t	int64
-	k	string
-	v	string
+	t int64
+	k string
+	v string
 }
 
 func usage() {
 	fmt.Printf("Usage %s <endpoint>\n", os.Args[0])
 	flag.PrintDefaults()
 }
+
 //res.GetKv().Key, res.GetKv().Value
 
-func compare(v1 Validation, v2 Validation) (bool) {
+func compare(v1 Validation, v2 Validation) bool {
 	if v1.t == v2.t {
 		if v1.k == v2.k {
-			if v1.v == v2.v{
+			if v1.v == v2.v {
 				return true
 			}
 		}
@@ -40,29 +44,33 @@ func compare(v1 Validation, v2 Validation) (bool) {
 	return false
 }
 
-func acceptResult(mapS *map[int64]int64, mapV *map[int64]Validation, r *PbftLocal) (*pb.Result, error) {
-	numberOfValidResponses := 0
+func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft) (*pb.Result, error) {
+	numberOfValidResponses := int64(0)
+	val := pb.Result{}
 	for numberOfValidResponses < 2 { //lot of changes required for a better performance
 		select {
-			case res := <-r.ResponseChan:
-			if v, exists := mapS[res.sequenceID]; v < 2 {
-				check := Validation{t: timestamp, k:nodeResult.Kv.Key, v:nodeResult.Kv.Value}
+		case res := <-r.ResponseChan:
+			if v := mapS[res.SequenceID]; v < 2 {
+				check := Validation{t: res.Timestamp, k: res.NodeResult.GetKv().Key, v: res.NodeResult.GetKv().Value}
 				if v > 0 {
 					checkee := mapV[v-1]
 					if compare(checkee, check) {
-						mapS[res.sequenceID] = v+1
-						numberOfValidResponses = v+1
-						mapV[res.sequenceID] = check
+						mapS[res.SequenceID] = v + 1
+						numberOfValidResponses = v + 1
+						mapV[res.SequenceID] = check
+						val = *res.NodeResult
 					}
 				} else {
-					mapS[res.sequenceID] = v+1
-					numberOfValidResponses = v+1
-					mapV[res.sequenceID] = check
+					mapS[res.SequenceID] = v + 1
+					numberOfValidResponses = v + 1
+					mapV[res.SequenceID] = check
+					val = *res.NodeResult
 				}
-				
-			} 
+
+			}
 		}
-	return &res.nodeResult, nil
+	}
+	return &val, nil
 }
 
 func main() {
@@ -73,7 +81,7 @@ func main() {
 	var pbftPort int
 	flag.IntVar(&pbftPort, "pbft", 3008,
 		"Port on which server should listen to Pbft requests")
-	flag.StringVar(&primary, "primary", "127.0.0.1:3001", 
+	flag.StringVar(&primary, "primary", "127.0.0.1:3001",
 		"Pbft Primary call")
 	flag.Parse()
 
@@ -97,24 +105,32 @@ func main() {
 	// Create a KvStore client
 	kvc := pb.NewKvStoreClient(conn)
 	port := 3008
-	pbft := util.PbftGlobal{ResponseChan: make(chan pb.ClientResponse)}
-	go util.RunPbftGlobalServer(&pbft, port)
+	pbft := util.Pbft{PrePrepareMsgChan: make(chan util.PrePrepareMsgInput), PrepareMsgChan: make(chan util.PrepareMsgInput), CommitMsgChan: make(chan util.CommitMsgInput), ViewChangeMsgChan: make(chan util.ViewChangeMsgInput), ResponseChan: make(chan *pb.ClientResponse)}
+	go util.RunPbftServer(&pbft, port)
 	//&pb.ClientRequest{cmd: ,timestamp: time_now,clientID: id}
 	// Clear KVC
+
+	//CLEAR
 	time_now := time.Now().UnixNano()
-	kvc.Clear(context.Background(), &pb.Empty{}, time_now, id)
+	in := &pb.Empty{}
+	r := pb.Command{Operation: pb.Op_CLEAR, Arg: &pb.Command_Clear{Clear: in}}
+	c := pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
+	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for clearing")
-	res, err := acceptResult(&mappedSeq, &mappedVal, &pbft)
+	res, err := acceptResult(mappedSeq, mappedVal, &pbft)
 	if err != nil {
 		log.Fatalf("Could not clear")
 	}
 	log.Printf("Done clearing")
+
 	// Put setting hello -> 1
 	time_now = time.Now().UnixNano()
-	putReq := &pb.KeyValue{Key: "hello", Value: "1"}
-	kvc.Set(context.Background(), putReq, time_now, id)
+	in2 := &pb.KeyValue{Key: "hello", Value: "1"}
+	r = pb.Command{Operation: pb.Op_SET, Arg: &pb.Command_Set{Set: in2}}
+	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
+	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for putting")
-	res, err := acceptResult(&mappedSeq, &mappedVal, &pbft)
+	res, err = acceptResult(mappedSeq, mappedVal, &pbft)
 	if err != nil {
 		log.Fatalf("Put error")
 	}
@@ -126,10 +142,12 @@ func main() {
 
 	// Request value for hello
 	time_now = time.Now().UnixNano()
-	req := &pb.Key{Key: "hello"}
-	kvc.Get(context.Background(), req, time_now, id)
+	in3 := &pb.Key{Key: "hello"}
+	r = pb.Command{Operation: pb.Op_GET, Arg: &pb.Command_Get{Get: in3}}
+	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
+	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for getting")
-	res, err := acceptResult(&mappedSeq, &mappedVal, &pbft)
+	res, err = acceptResult(mappedSeq, mappedVal, &pbft)
 	if err != nil {
 		log.Fatalf("Request error %v", err)
 	}
@@ -141,10 +159,12 @@ func main() {
 
 	// Successfully CAS changing hello -> 2
 	time_now = time.Now().UnixNano()
-	casReq := &pb.CASArg{Kv: &pb.KeyValue{Key: "hello", Value: "1"}, Value: &pb.Value{Value: "2"}}
-	kvc.CAS(context.Background(), casReq, time_now, id)
+	in4 := &pb.CASArg{Kv: &pb.KeyValue{Key: "hello", Value: "1"}, Value: &pb.Value{Value: "2"}}
+	r = pb.Command{Operation: pb.Op_CAS, Arg: &pb.Command_Cas{Cas: in4}}
+	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
+	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for CASing")
-	res, err := acceptResult(&mappedSeq, &mappedVal, &pbft)
+	res, err = acceptResult(mappedSeq, mappedVal, &pbft)
 	if err != nil {
 		log.Fatalf("Request error %v", err)
 	}
@@ -156,10 +176,12 @@ func main() {
 
 	// Unsuccessfully CAS
 	time_now = time.Now().UnixNano()
-	casReq = &pb.CASArg{Kv: &pb.KeyValue{Key: "hello", Value: "1"}, Value: &pb.Value{Value: "3"}}
-	kvc.CAS(context.Background(), casReq, time_now, id)
+	in5 := &pb.CASArg{Kv: &pb.KeyValue{Key: "hello", Value: "1"}, Value: &pb.Value{Value: "3"}}
+	r = pb.Command{Operation: pb.Op_CAS, Arg: &pb.Command_Cas{Cas: in5}}
+	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
+	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for CASing")
-	res, err := acceptResult(&mappedSeq, &mappedVal, &pbft)
+	res, err = acceptResult(mappedSeq, mappedVal, &pbft)
 	if err != nil {
 		log.Fatalf("Request error %v", err)
 	}
@@ -171,10 +193,12 @@ func main() {
 
 	// CAS should fail for uninitialized variables
 	time_now = time.Now().UnixNano()
-	casReq = &pb.CASArg{Kv: &pb.KeyValue{Key: "hellooo", Value: "1"}, Value: &pb.Value{Value: "2"}}
-	kvc.CAS(context.Background(), casReq, time_now, id)
+	in6 := &pb.CASArg{Kv: &pb.KeyValue{Key: "hellooo", Value: "1"}, Value: &pb.Value{Value: "2"}}
+	r = pb.Command{Operation: pb.Op_CAS, Arg: &pb.Command_Cas{Cas: in6}}
+	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
+	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for CASing")
-	res, err := acceptResult(&mappedSeq, &mappedVal, &pbft)
+	res, err = acceptResult(mappedSeq, mappedVal, &pbft)
 	if err != nil {
 		log.Fatalf("Request error %v", err)
 	}

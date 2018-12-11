@@ -42,6 +42,7 @@ message Redirect {
     string server = 1;
 }
 
+
 // Represents an operation result.
 message Result {
     oneof result {
@@ -54,10 +55,7 @@ message Result {
 // KvStore service
 service KvStore {
     // Get the value associated with a key.
-    rpc Get (Key) returns (Success) {}
-    rpc Set (KeyValue) returns (Success) {}
-    rpc Clear(Empty) returns (Success) {}
-    rpc CAS(CASArg) returns (Success) {}
+    rpc Call (ClientRequest) returns (Success) {}
 }
 
 // Internal representations for operations.
@@ -79,12 +77,12 @@ message Command {
     }
 }
 
-// // A log entry
-// message Entry {
-//     int64 term = 1;
-//     int64 index = 2;
-//     Command cmd = 3;
-// }
+// A log entry
+message Entry {
+    int64 term = 1;
+    int64 index = 2;
+    Command cmd = 3;
+}
 
 // // Input to AppendEntries (as defined in Figure 2)
 // message AppendEntriesArgs {
@@ -175,9 +173,10 @@ message ViewChangeMsg {
 }
 
 service Pbft {
-    rpc ClientRequestPBFT(ClientRequest) returns (ClientResponse) {}
-    rpc PrePreparePBFT(PrePrepareMsg) returns (PbftMsgAccepted) {}
-    rpc PreparePBFT(PrepareMsg) returns (PbftMsgAccepted) {}
-    rpc CommitPBFT(CommitMsg) returns (PbftMsgAccepted) {}
-    rpc ViewChangePBFT(ViewChangeMsg) returns (PbftMsgAccepted) {}
+    // rpc ClientRequestPBFT(ClientRequest) returns (ClientResponse) {}
+    rpc PrePreparePBFT(PrePrepareMsg) returns (Success) {}
+    rpc PreparePBFT(PrepareMsg) returns (Success) {}
+    rpc CommitPBFT(CommitMsg) returns (Success) {}
+    rpc ViewChangePBFT(ViewChangeMsg) returns (Success) {}
+    rpc SendResponseBack(ClientResponse) returns (Success) {}
 }

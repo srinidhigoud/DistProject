@@ -646,244 +646,471 @@ func (m *Entry) GetCmd() *Command {
 	return nil
 }
 
-// Input to AppendEntries (as defined in Figure 2)
-type AppendEntriesArgs struct {
-	Term                 int64    `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
-	LeaderID             string   `protobuf:"bytes,2,opt,name=leaderID,proto3" json:"leaderID,omitempty"`
-	PrevLogIndex         int64    `protobuf:"varint,3,opt,name=prevLogIndex,proto3" json:"prevLogIndex,omitempty"`
-	PrevLogTerm          int64    `protobuf:"varint,4,opt,name=prevLogTerm,proto3" json:"prevLogTerm,omitempty"`
-	LeaderCommit         int64    `protobuf:"varint,5,opt,name=leaderCommit,proto3" json:"leaderCommit,omitempty"`
-	Entries              []*Entry `protobuf:"bytes,6,rep,name=entries,proto3" json:"entries,omitempty"`
+//////////////////////////////PBFT//////////////////////////////
+type ClientRequest struct {
+	Cmd                  *Command `protobuf:"bytes,1,opt,name=cmd,proto3" json:"cmd,omitempty"`
+	Timestamp            int64    `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	ClientID             string   `protobuf:"bytes,3,opt,name=clientID,proto3" json:"clientID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AppendEntriesArgs) Reset()         { *m = AppendEntriesArgs{} }
-func (m *AppendEntriesArgs) String() string { return proto.CompactTextString(m) }
-func (*AppendEntriesArgs) ProtoMessage()    {}
-func (*AppendEntriesArgs) Descriptor() ([]byte, []int) {
+func (m *ClientRequest) Reset()         { *m = ClientRequest{} }
+func (m *ClientRequest) String() string { return proto.CompactTextString(m) }
+func (*ClientRequest) ProtoMessage()    {}
+func (*ClientRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2216fe83c9c12408, []int{11}
 }
 
-func (m *AppendEntriesArgs) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AppendEntriesArgs.Unmarshal(m, b)
+func (m *ClientRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ClientRequest.Unmarshal(m, b)
 }
-func (m *AppendEntriesArgs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AppendEntriesArgs.Marshal(b, m, deterministic)
+func (m *ClientRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ClientRequest.Marshal(b, m, deterministic)
 }
-func (m *AppendEntriesArgs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AppendEntriesArgs.Merge(m, src)
+func (m *ClientRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClientRequest.Merge(m, src)
 }
-func (m *AppendEntriesArgs) XXX_Size() int {
-	return xxx_messageInfo_AppendEntriesArgs.Size(m)
+func (m *ClientRequest) XXX_Size() int {
+	return xxx_messageInfo_ClientRequest.Size(m)
 }
-func (m *AppendEntriesArgs) XXX_DiscardUnknown() {
-	xxx_messageInfo_AppendEntriesArgs.DiscardUnknown(m)
+func (m *ClientRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClientRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AppendEntriesArgs proto.InternalMessageInfo
+var xxx_messageInfo_ClientRequest proto.InternalMessageInfo
 
-func (m *AppendEntriesArgs) GetTerm() int64 {
+func (m *ClientRequest) GetCmd() *Command {
 	if m != nil {
-		return m.Term
-	}
-	return 0
-}
-
-func (m *AppendEntriesArgs) GetLeaderID() string {
-	if m != nil {
-		return m.LeaderID
-	}
-	return ""
-}
-
-func (m *AppendEntriesArgs) GetPrevLogIndex() int64 {
-	if m != nil {
-		return m.PrevLogIndex
-	}
-	return 0
-}
-
-func (m *AppendEntriesArgs) GetPrevLogTerm() int64 {
-	if m != nil {
-		return m.PrevLogTerm
-	}
-	return 0
-}
-
-func (m *AppendEntriesArgs) GetLeaderCommit() int64 {
-	if m != nil {
-		return m.LeaderCommit
-	}
-	return 0
-}
-
-func (m *AppendEntriesArgs) GetEntries() []*Entry {
-	if m != nil {
-		return m.Entries
+		return m.Cmd
 	}
 	return nil
 }
 
-// Output from AppendEntries
-type AppendEntriesRet struct {
-	Term                 int64    `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
-	Success              bool     `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
+func (m *ClientRequest) GetTimestamp() int64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
+func (m *ClientRequest) GetClientID() string {
+	if m != nil {
+		return m.ClientID
+	}
+	return ""
+}
+
+// Response to client
+type ClientResponse struct {
+	ViewId               int64    `protobuf:"varint,1,opt,name=viewId,proto3" json:"viewId,omitempty"`
+	Timestamp            int64    `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	ClientID             string   `protobuf:"bytes,3,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	Node                 string   `protobuf:"bytes,4,opt,name=node,proto3" json:"node,omitempty"`
+	NodeResult           *Result  `protobuf:"bytes,5,opt,name=nodeResult,proto3" json:"nodeResult,omitempty"`
+	SequenceID           int64    `protobuf:"varint,6,opt,name=sequenceID,proto3" json:"sequenceID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AppendEntriesRet) Reset()         { *m = AppendEntriesRet{} }
-func (m *AppendEntriesRet) String() string { return proto.CompactTextString(m) }
-func (*AppendEntriesRet) ProtoMessage()    {}
-func (*AppendEntriesRet) Descriptor() ([]byte, []int) {
+func (m *ClientResponse) Reset()         { *m = ClientResponse{} }
+func (m *ClientResponse) String() string { return proto.CompactTextString(m) }
+func (*ClientResponse) ProtoMessage()    {}
+func (*ClientResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2216fe83c9c12408, []int{12}
 }
 
-func (m *AppendEntriesRet) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AppendEntriesRet.Unmarshal(m, b)
+func (m *ClientResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ClientResponse.Unmarshal(m, b)
 }
-func (m *AppendEntriesRet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AppendEntriesRet.Marshal(b, m, deterministic)
+func (m *ClientResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ClientResponse.Marshal(b, m, deterministic)
 }
-func (m *AppendEntriesRet) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AppendEntriesRet.Merge(m, src)
+func (m *ClientResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClientResponse.Merge(m, src)
 }
-func (m *AppendEntriesRet) XXX_Size() int {
-	return xxx_messageInfo_AppendEntriesRet.Size(m)
+func (m *ClientResponse) XXX_Size() int {
+	return xxx_messageInfo_ClientResponse.Size(m)
 }
-func (m *AppendEntriesRet) XXX_DiscardUnknown() {
-	xxx_messageInfo_AppendEntriesRet.DiscardUnknown(m)
+func (m *ClientResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClientResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AppendEntriesRet proto.InternalMessageInfo
+var xxx_messageInfo_ClientResponse proto.InternalMessageInfo
 
-func (m *AppendEntriesRet) GetTerm() int64 {
+func (m *ClientResponse) GetViewId() int64 {
 	if m != nil {
-		return m.Term
+		return m.ViewId
 	}
 	return 0
 }
 
-func (m *AppendEntriesRet) GetSuccess() bool {
+func (m *ClientResponse) GetTimestamp() int64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
+func (m *ClientResponse) GetClientID() string {
+	if m != nil {
+		return m.ClientID
+	}
+	return ""
+}
+
+func (m *ClientResponse) GetNode() string {
+	if m != nil {
+		return m.Node
+	}
+	return ""
+}
+
+func (m *ClientResponse) GetNodeResult() *Result {
+	if m != nil {
+		return m.NodeResult
+	}
+	return nil
+}
+
+func (m *ClientResponse) GetSequenceID() int64 {
+	if m != nil {
+		return m.SequenceID
+	}
+	return 0
+}
+
+type PrePrepareMsg struct {
+	ViewId               int64          `protobuf:"varint,1,opt,name=viewId,proto3" json:"viewId,omitempty"`
+	SequenceID           int64          `protobuf:"varint,2,opt,name=sequenceID,proto3" json:"sequenceID,omitempty"`
+	Digest               string         `protobuf:"bytes,3,opt,name=digest,proto3" json:"digest,omitempty"`
+	Request              *ClientRequest `protobuf:"bytes,4,opt,name=request,proto3" json:"request,omitempty"`
+	Node                 string         `protobuf:"bytes,5,opt,name=node,proto3" json:"node,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
+}
+
+func (m *PrePrepareMsg) Reset()         { *m = PrePrepareMsg{} }
+func (m *PrePrepareMsg) String() string { return proto.CompactTextString(m) }
+func (*PrePrepareMsg) ProtoMessage()    {}
+func (*PrePrepareMsg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2216fe83c9c12408, []int{13}
+}
+
+func (m *PrePrepareMsg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PrePrepareMsg.Unmarshal(m, b)
+}
+func (m *PrePrepareMsg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PrePrepareMsg.Marshal(b, m, deterministic)
+}
+func (m *PrePrepareMsg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PrePrepareMsg.Merge(m, src)
+}
+func (m *PrePrepareMsg) XXX_Size() int {
+	return xxx_messageInfo_PrePrepareMsg.Size(m)
+}
+func (m *PrePrepareMsg) XXX_DiscardUnknown() {
+	xxx_messageInfo_PrePrepareMsg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PrePrepareMsg proto.InternalMessageInfo
+
+func (m *PrePrepareMsg) GetViewId() int64 {
+	if m != nil {
+		return m.ViewId
+	}
+	return 0
+}
+
+func (m *PrePrepareMsg) GetSequenceID() int64 {
+	if m != nil {
+		return m.SequenceID
+	}
+	return 0
+}
+
+func (m *PrePrepareMsg) GetDigest() string {
+	if m != nil {
+		return m.Digest
+	}
+	return ""
+}
+
+func (m *PrePrepareMsg) GetRequest() *ClientRequest {
+	if m != nil {
+		return m.Request
+	}
+	return nil
+}
+
+func (m *PrePrepareMsg) GetNode() string {
+	if m != nil {
+		return m.Node
+	}
+	return ""
+}
+
+type PrepareMsg struct {
+	ViewId               int64    `protobuf:"varint,1,opt,name=viewId,proto3" json:"viewId,omitempty"`
+	SequenceID           int64    `protobuf:"varint,2,opt,name=sequenceID,proto3" json:"sequenceID,omitempty"`
+	Digest               string   `protobuf:"bytes,3,opt,name=digest,proto3" json:"digest,omitempty"`
+	Node                 string   `protobuf:"bytes,4,opt,name=node,proto3" json:"node,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *PrepareMsg) Reset()         { *m = PrepareMsg{} }
+func (m *PrepareMsg) String() string { return proto.CompactTextString(m) }
+func (*PrepareMsg) ProtoMessage()    {}
+func (*PrepareMsg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2216fe83c9c12408, []int{14}
+}
+
+func (m *PrepareMsg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PrepareMsg.Unmarshal(m, b)
+}
+func (m *PrepareMsg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PrepareMsg.Marshal(b, m, deterministic)
+}
+func (m *PrepareMsg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PrepareMsg.Merge(m, src)
+}
+func (m *PrepareMsg) XXX_Size() int {
+	return xxx_messageInfo_PrepareMsg.Size(m)
+}
+func (m *PrepareMsg) XXX_DiscardUnknown() {
+	xxx_messageInfo_PrepareMsg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PrepareMsg proto.InternalMessageInfo
+
+func (m *PrepareMsg) GetViewId() int64 {
+	if m != nil {
+		return m.ViewId
+	}
+	return 0
+}
+
+func (m *PrepareMsg) GetSequenceID() int64 {
+	if m != nil {
+		return m.SequenceID
+	}
+	return 0
+}
+
+func (m *PrepareMsg) GetDigest() string {
+	if m != nil {
+		return m.Digest
+	}
+	return ""
+}
+
+func (m *PrepareMsg) GetNode() string {
+	if m != nil {
+		return m.Node
+	}
+	return ""
+}
+
+type CommitMsg struct {
+	ViewId               int64    `protobuf:"varint,1,opt,name=viewId,proto3" json:"viewId,omitempty"`
+	SequenceID           int64    `protobuf:"varint,2,opt,name=sequenceID,proto3" json:"sequenceID,omitempty"`
+	Digest               string   `protobuf:"bytes,3,opt,name=digest,proto3" json:"digest,omitempty"`
+	Node                 string   `protobuf:"bytes,4,opt,name=node,proto3" json:"node,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CommitMsg) Reset()         { *m = CommitMsg{} }
+func (m *CommitMsg) String() string { return proto.CompactTextString(m) }
+func (*CommitMsg) ProtoMessage()    {}
+func (*CommitMsg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2216fe83c9c12408, []int{15}
+}
+
+func (m *CommitMsg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CommitMsg.Unmarshal(m, b)
+}
+func (m *CommitMsg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CommitMsg.Marshal(b, m, deterministic)
+}
+func (m *CommitMsg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CommitMsg.Merge(m, src)
+}
+func (m *CommitMsg) XXX_Size() int {
+	return xxx_messageInfo_CommitMsg.Size(m)
+}
+func (m *CommitMsg) XXX_DiscardUnknown() {
+	xxx_messageInfo_CommitMsg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CommitMsg proto.InternalMessageInfo
+
+func (m *CommitMsg) GetViewId() int64 {
+	if m != nil {
+		return m.ViewId
+	}
+	return 0
+}
+
+func (m *CommitMsg) GetSequenceID() int64 {
+	if m != nil {
+		return m.SequenceID
+	}
+	return 0
+}
+
+func (m *CommitMsg) GetDigest() string {
+	if m != nil {
+		return m.Digest
+	}
+	return ""
+}
+
+func (m *CommitMsg) GetNode() string {
+	if m != nil {
+		return m.Node
+	}
+	return ""
+}
+
+type PbftMsgAccepted struct {
+	ViewId               int64    `protobuf:"varint,1,opt,name=viewId,proto3" json:"viewId,omitempty"`
+	SequenceID           int64    `protobuf:"varint,2,opt,name=sequenceID,proto3" json:"sequenceID,omitempty"`
+	Success              bool     `protobuf:"varint,3,opt,name=success,proto3" json:"success,omitempty"`
+	TypeOfAccepted       string   `protobuf:"bytes,4,opt,name=typeOfAccepted,proto3" json:"typeOfAccepted,omitempty"`
+	Node                 string   `protobuf:"bytes,5,opt,name=node,proto3" json:"node,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *PbftMsgAccepted) Reset()         { *m = PbftMsgAccepted{} }
+func (m *PbftMsgAccepted) String() string { return proto.CompactTextString(m) }
+func (*PbftMsgAccepted) ProtoMessage()    {}
+func (*PbftMsgAccepted) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2216fe83c9c12408, []int{16}
+}
+
+func (m *PbftMsgAccepted) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PbftMsgAccepted.Unmarshal(m, b)
+}
+func (m *PbftMsgAccepted) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PbftMsgAccepted.Marshal(b, m, deterministic)
+}
+func (m *PbftMsgAccepted) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PbftMsgAccepted.Merge(m, src)
+}
+func (m *PbftMsgAccepted) XXX_Size() int {
+	return xxx_messageInfo_PbftMsgAccepted.Size(m)
+}
+func (m *PbftMsgAccepted) XXX_DiscardUnknown() {
+	xxx_messageInfo_PbftMsgAccepted.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PbftMsgAccepted proto.InternalMessageInfo
+
+func (m *PbftMsgAccepted) GetViewId() int64 {
+	if m != nil {
+		return m.ViewId
+	}
+	return 0
+}
+
+func (m *PbftMsgAccepted) GetSequenceID() int64 {
+	if m != nil {
+		return m.SequenceID
+	}
+	return 0
+}
+
+func (m *PbftMsgAccepted) GetSuccess() bool {
 	if m != nil {
 		return m.Success
 	}
 	return false
 }
 
-// Input to RequestVote
-type RequestVoteArgs struct {
-	Term                 int64    `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
-	CandidateID          string   `protobuf:"bytes,2,opt,name=candidateID,proto3" json:"candidateID,omitempty"`
-	LastLogIndex         int64    `protobuf:"varint,3,opt,name=lastLogIndex,proto3" json:"lastLogIndex,omitempty"`
-	LasLogTerm           int64    `protobuf:"varint,4,opt,name=lasLogTerm,proto3" json:"lasLogTerm,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *RequestVoteArgs) Reset()         { *m = RequestVoteArgs{} }
-func (m *RequestVoteArgs) String() string { return proto.CompactTextString(m) }
-func (*RequestVoteArgs) ProtoMessage()    {}
-func (*RequestVoteArgs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2216fe83c9c12408, []int{13}
-}
-
-func (m *RequestVoteArgs) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_RequestVoteArgs.Unmarshal(m, b)
-}
-func (m *RequestVoteArgs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_RequestVoteArgs.Marshal(b, m, deterministic)
-}
-func (m *RequestVoteArgs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RequestVoteArgs.Merge(m, src)
-}
-func (m *RequestVoteArgs) XXX_Size() int {
-	return xxx_messageInfo_RequestVoteArgs.Size(m)
-}
-func (m *RequestVoteArgs) XXX_DiscardUnknown() {
-	xxx_messageInfo_RequestVoteArgs.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RequestVoteArgs proto.InternalMessageInfo
-
-func (m *RequestVoteArgs) GetTerm() int64 {
+func (m *PbftMsgAccepted) GetTypeOfAccepted() string {
 	if m != nil {
-		return m.Term
-	}
-	return 0
-}
-
-func (m *RequestVoteArgs) GetCandidateID() string {
-	if m != nil {
-		return m.CandidateID
+		return m.TypeOfAccepted
 	}
 	return ""
 }
 
-func (m *RequestVoteArgs) GetLastLogIndex() int64 {
+func (m *PbftMsgAccepted) GetNode() string {
 	if m != nil {
-		return m.LastLogIndex
+		return m.Node
 	}
-	return 0
+	return ""
 }
 
-func (m *RequestVoteArgs) GetLasLogTerm() int64 {
-	if m != nil {
-		return m.LasLogTerm
-	}
-	return 0
-}
-
-// Output from RequestVote
-type RequestVoteRet struct {
-	Term                 int64    `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
-	VoteGranted          bool     `protobuf:"varint,2,opt,name=voteGranted,proto3" json:"voteGranted,omitempty"`
+type ViewChangeMsg struct {
+	Type                 string   `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	NewView              int64    `protobuf:"varint,2,opt,name=newView,proto3" json:"newView,omitempty"`
+	LastSequenceID       int64    `protobuf:"varint,3,opt,name=lastSequenceID,proto3" json:"lastSequenceID,omitempty"`
+	Node                 string   `protobuf:"bytes,5,opt,name=node,proto3" json:"node,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *RequestVoteRet) Reset()         { *m = RequestVoteRet{} }
-func (m *RequestVoteRet) String() string { return proto.CompactTextString(m) }
-func (*RequestVoteRet) ProtoMessage()    {}
-func (*RequestVoteRet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2216fe83c9c12408, []int{14}
+func (m *ViewChangeMsg) Reset()         { *m = ViewChangeMsg{} }
+func (m *ViewChangeMsg) String() string { return proto.CompactTextString(m) }
+func (*ViewChangeMsg) ProtoMessage()    {}
+func (*ViewChangeMsg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2216fe83c9c12408, []int{17}
 }
 
-func (m *RequestVoteRet) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_RequestVoteRet.Unmarshal(m, b)
+func (m *ViewChangeMsg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ViewChangeMsg.Unmarshal(m, b)
 }
-func (m *RequestVoteRet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_RequestVoteRet.Marshal(b, m, deterministic)
+func (m *ViewChangeMsg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ViewChangeMsg.Marshal(b, m, deterministic)
 }
-func (m *RequestVoteRet) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RequestVoteRet.Merge(m, src)
+func (m *ViewChangeMsg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ViewChangeMsg.Merge(m, src)
 }
-func (m *RequestVoteRet) XXX_Size() int {
-	return xxx_messageInfo_RequestVoteRet.Size(m)
+func (m *ViewChangeMsg) XXX_Size() int {
+	return xxx_messageInfo_ViewChangeMsg.Size(m)
 }
-func (m *RequestVoteRet) XXX_DiscardUnknown() {
-	xxx_messageInfo_RequestVoteRet.DiscardUnknown(m)
+func (m *ViewChangeMsg) XXX_DiscardUnknown() {
+	xxx_messageInfo_ViewChangeMsg.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_RequestVoteRet proto.InternalMessageInfo
+var xxx_messageInfo_ViewChangeMsg proto.InternalMessageInfo
 
-func (m *RequestVoteRet) GetTerm() int64 {
+func (m *ViewChangeMsg) GetType() string {
 	if m != nil {
-		return m.Term
+		return m.Type
+	}
+	return ""
+}
+
+func (m *ViewChangeMsg) GetNewView() int64 {
+	if m != nil {
+		return m.NewView
 	}
 	return 0
 }
 
-func (m *RequestVoteRet) GetVoteGranted() bool {
+func (m *ViewChangeMsg) GetLastSequenceID() int64 {
 	if m != nil {
-		return m.VoteGranted
+		return m.LastSequenceID
 	}
-	return false
+	return 0
+}
+
+func (m *ViewChangeMsg) GetNode() string {
+	if m != nil {
+		return m.Node
+	}
+	return ""
 }
 
 func init() {
@@ -899,62 +1126,70 @@ func init() {
 	proto.RegisterType((*Result)(nil), "pb.Result")
 	proto.RegisterType((*Command)(nil), "pb.Command")
 	proto.RegisterType((*Entry)(nil), "pb.Entry")
-	proto.RegisterType((*AppendEntriesArgs)(nil), "pb.AppendEntriesArgs")
-	proto.RegisterType((*AppendEntriesRet)(nil), "pb.AppendEntriesRet")
-	proto.RegisterType((*RequestVoteArgs)(nil), "pb.RequestVoteArgs")
-	proto.RegisterType((*RequestVoteRet)(nil), "pb.RequestVoteRet")
+	proto.RegisterType((*ClientRequest)(nil), "pb.ClientRequest")
+	proto.RegisterType((*ClientResponse)(nil), "pb.ClientResponse")
+	proto.RegisterType((*PrePrepareMsg)(nil), "pb.PrePrepareMsg")
+	proto.RegisterType((*PrepareMsg)(nil), "pb.PrepareMsg")
+	proto.RegisterType((*CommitMsg)(nil), "pb.CommitMsg")
+	proto.RegisterType((*PbftMsgAccepted)(nil), "pb.PbftMsgAccepted")
+	proto.RegisterType((*ViewChangeMsg)(nil), "pb.ViewChangeMsg")
 }
 
 func init() { proto.RegisterFile("kv.proto", fileDescriptor_2216fe83c9c12408) }
 
 var fileDescriptor_2216fe83c9c12408 = []byte{
-	// 726 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x55, 0x4d, 0x73, 0xda, 0x48,
-	0x10, 0x45, 0x8c, 0x85, 0xa0, 0xf1, 0x7a, 0xd9, 0x5e, 0xef, 0x2e, 0x8b, 0xbf, 0xb0, 0x76, 0x0f,
-	0x29, 0x1f, 0x7c, 0x20, 0x97, 0x9c, 0x52, 0xc1, 0x84, 0x80, 0xcb, 0xae, 0xb2, 0x6b, 0x70, 0xf9,
-	0x2e, 0xa4, 0x0e, 0x45, 0xf1, 0x21, 0x65, 0x66, 0x50, 0x85, 0xca, 0x39, 0xb9, 0xa4, 0xf2, 0x7f,
-	0xf2, 0x3b, 0xf2, 0x8b, 0x52, 0x33, 0x12, 0x20, 0x81, 0x7d, 0xce, 0x6d, 0xfa, 0xf5, 0xc7, 0x7b,
-	0xfd, 0xd4, 0x14, 0x50, 0x9e, 0xc4, 0x97, 0x91, 0x08, 0x55, 0x88, 0xc5, 0x68, 0xe8, 0xfe, 0x03,
-	0xec, 0x86, 0x96, 0x58, 0x03, 0x36, 0xa1, 0x65, 0xdd, 0x6a, 0x5a, 0x2f, 0x2a, 0x5c, 0x3f, 0xdd,
-	0x13, 0xb0, 0x1f, 0xbd, 0xe9, 0x82, 0xf0, 0x10, 0xec, 0x58, 0x3f, 0xd2, 0x64, 0x12, 0xb8, 0x2d,
-	0x28, 0xdf, 0xd0, 0x32, 0xa9, 0xd8, 0x69, 0xde, 0xf4, 0x14, 0xb3, 0x3d, 0x15, 0x70, 0x06, 0x0b,
-	0xdf, 0x27, 0x29, 0xdd, 0x7f, 0xc1, 0xee, 0x0a, 0x11, 0x0a, 0xdd, 0x3b, 0x93, 0xa3, 0x55, 0xef,
-	0x4c, 0x8e, 0xdc, 0x1e, 0x94, 0x3a, 0xed, 0x41, 0x5b, 0x8c, 0xf0, 0x18, 0x8a, 0x93, 0xd8, 0xa4,
-	0xaa, 0xad, 0xfd, 0xcb, 0x68, 0x78, 0xb9, 0x62, 0xe4, 0xc5, 0x49, 0x8c, 0x67, 0x59, 0x8e, 0x6a,
-	0xab, 0xa2, 0x0b, 0x92, 0x6c, 0x4a, 0xe7, 0x80, 0xdd, 0x9d, 0x45, 0x6a, 0xe9, 0xba, 0x50, 0xe6,
-	0x14, 0x8c, 0x05, 0xf9, 0x0a, 0xff, 0x86, 0x92, 0x24, 0x11, 0x93, 0x48, 0x29, 0xd3, 0xc8, 0xfd,
-	0x04, 0x25, 0x4e, 0x72, 0x31, 0x55, 0x78, 0x01, 0x65, 0x91, 0x56, 0x67, 0xb9, 0x57, 0x13, 0xfa,
-	0x05, 0xbe, 0xce, 0xe3, 0xa9, 0x51, 0x58, 0xdc, 0x55, 0xd8, 0x2f, 0x18, 0x8d, 0x47, 0x60, 0xc9,
-	0x3a, 0x33, 0xe9, 0xaa, 0x4e, 0xa7, 0xeb, 0xf7, 0x0b, 0xdc, 0x92, 0x57, 0x65, 0x28, 0x09, 0x43,
-	0xe9, 0x7e, 0xb7, 0xc0, 0xe9, 0x84, 0xb3, 0x99, 0x37, 0x0f, 0xf0, 0x7f, 0xa8, 0x84, 0x11, 0x09,
-	0x4f, 0x8d, 0xc3, 0xb9, 0xe1, 0x3f, 0x68, 0x95, 0x74, 0xeb, 0x5d, 0xc4, 0x37, 0x09, 0x3c, 0x02,
-	0x36, 0x22, 0x95, 0x32, 0x3b, 0x29, 0x73, 0xbf, 0xc0, 0x35, 0x8a, 0x4d, 0x60, 0x92, 0x54, 0xca,
-	0xbb, 0x2d, 0x4b, 0xa7, 0xf0, 0x1c, 0x6c, 0x7f, 0x4a, 0x9e, 0xa8, 0xef, 0x6d, 0xbc, 0x33, 0x5e,
-	0xf5, 0x0b, 0x3c, 0xc9, 0xe0, 0x29, 0x30, 0xdf, 0x93, 0x75, 0xdb, 0x14, 0x80, 0x2e, 0x48, 0xbe,
-	0x8a, 0x1e, 0xe1, 0x7b, 0xf2, 0xca, 0x06, 0xe6, 0x89, 0x91, 0x7b, 0x0f, 0x76, 0x77, 0xae, 0xc4,
-	0x12, 0x11, 0xf6, 0x14, 0x89, 0x99, 0x91, 0xcc, 0xb8, 0x79, 0xeb, 0x33, 0x18, 0xcf, 0x03, 0xfa,
-	0x68, 0x74, 0x32, 0x9e, 0x04, 0x78, 0x02, 0xcc, 0x9f, 0x05, 0x59, 0x5b, 0xd2, 0xdd, 0xb9, 0xc6,
-	0xdd, 0x1f, 0x16, 0xfc, 0xd1, 0x8e, 0x22, 0x9a, 0x07, 0x7a, 0xf0, 0x98, 0x64, 0x5b, 0x8c, 0xe4,
-	0x93, 0xe3, 0x1b, 0x50, 0x9e, 0x92, 0x17, 0x90, 0xb8, 0x7e, 0x9b, 0x1e, 0xda, 0x3a, 0x46, 0x17,
-	0xf6, 0x23, 0x41, 0xf1, 0x6d, 0x38, 0xba, 0x36, 0x0a, 0x98, 0xe9, 0xcb, 0x61, 0xd8, 0x84, 0x6a,
-	0x1a, 0x3f, 0xe8, 0xd1, 0x7b, 0xa6, 0x24, 0x0b, 0xe9, 0x29, 0xc9, 0x44, 0xad, 0x70, 0xac, 0x8c,
-	0x1b, 0x8c, 0xe7, 0x30, 0xfc, 0x0f, 0x1c, 0x4a, 0x84, 0xd6, 0x4b, 0x4d, 0xb6, 0x76, 0x53, 0x9b,
-	0xc2, 0x57, 0x19, 0xf7, 0x0d, 0xd4, 0x72, 0x3b, 0x71, 0x52, 0x4f, 0xae, 0x54, 0x07, 0x47, 0x26,
-	0x37, 0x62, 0x36, 0x2a, 0xf3, 0x55, 0xe8, 0x7e, 0xb5, 0xe0, 0x77, 0x4e, 0x1f, 0x16, 0x24, 0xd5,
-	0x63, 0xa8, 0xe8, 0x59, 0x53, 0x9a, 0x50, 0xf5, 0xbd, 0x79, 0x30, 0x0e, 0x3c, 0x45, 0x6b, 0x5f,
-	0xb2, 0x90, 0x59, 0xca, 0x93, 0x6a, 0xdb, 0x9a, 0x2c, 0x86, 0xa7, 0x00, 0x53, 0x4f, 0xe6, 0x9d,
-	0xc9, 0x20, 0xee, 0x3b, 0x38, 0xc8, 0x88, 0x79, 0x6e, 0x9b, 0x26, 0x54, 0xe3, 0x50, 0x51, 0x4f,
-	0x78, 0x73, 0x45, 0x41, 0xba, 0x51, 0x16, 0xba, 0xb8, 0x80, 0xe2, 0x5d, 0x84, 0x0e, 0xb0, 0x5e,
-	0xf7, 0xa1, 0x56, 0xd0, 0x8f, 0x41, 0xf7, 0xa1, 0x66, 0x61, 0x05, 0xec, 0xce, 0x6d, 0xb7, 0xcd,
-	0x6b, 0x45, 0x8d, 0x75, 0xda, 0x83, 0x1a, 0x6b, 0x7d, 0xb3, 0xc0, 0xb9, 0x89, 0x07, 0x2a, 0x14,
-	0x84, 0xc7, 0xc0, 0x7a, 0xa4, 0x70, 0x75, 0xf9, 0x0d, 0x48, 0x7e, 0xa2, 0xe6, 0xd7, 0x54, 0xc0,
-	0x73, 0x60, 0x03, 0x52, 0x98, 0x3b, 0xfd, 0xad, 0x92, 0x26, 0xd8, 0x1d, 0x73, 0xe7, 0x9b, 0xdb,
-	0xdf, 0xaa, 0x38, 0x33, 0xbc, 0x98, 0x39, 0xfd, 0x7c, 0x41, 0xeb, 0xb3, 0x05, 0x95, 0xfb, 0xe1,
-	0x7b, 0x75, 0x1b, 0xfa, 0xde, 0x14, 0x5f, 0xc3, 0x6f, 0xb9, 0x2f, 0x8c, 0x7f, 0xe9, 0xe2, 0x9d,
-	0x43, 0x6e, 0x1c, 0xee, 0xc0, 0x9c, 0x34, 0xdd, 0x2b, 0xa8, 0x66, 0x1c, 0xc5, 0x3f, 0x13, 0xaa,
-	0xdc, 0xf7, 0x6e, 0xe0, 0x16, 0x68, 0x3a, 0x5b, 0x5f, 0x2c, 0x00, 0xad, 0xa3, 0x37, 0x0d, 0x87,
-	0xbf, 0x52, 0xc8, 0xb0, 0x64, 0xfe, 0x56, 0x5e, 0xfe, 0x0c, 0x00, 0x00, 0xff, 0xff, 0xfb, 0x4e,
-	0x05, 0xbb, 0x62, 0x06, 0x00, 0x00,
+	// 802 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x55, 0xdd, 0x6e, 0xe3, 0x44,
+	0x14, 0x8e, 0xed, 0x3a, 0x8e, 0x4f, 0x69, 0x08, 0x23, 0x04, 0x61, 0x7f, 0xca, 0x32, 0x42, 0x68,
+	0x15, 0x50, 0x2f, 0xbc, 0xe2, 0x01, 0xd2, 0x6c, 0xd8, 0x54, 0x05, 0x35, 0x9a, 0x54, 0x7b, 0xef,
+	0xda, 0x67, 0xbd, 0x56, 0xe2, 0x1f, 0x66, 0xa6, 0x29, 0x16, 0x0f, 0x03, 0x8f, 0xc1, 0x35, 0x2f,
+	0x06, 0x9a, 0xf1, 0xb8, 0x76, 0xdd, 0xec, 0xcd, 0x4a, 0x70, 0x95, 0x39, 0xe7, 0x7c, 0xdf, 0x7c,
+	0xe7, 0xcf, 0x13, 0x18, 0x6d, 0xf7, 0x67, 0x25, 0x2f, 0x64, 0x41, 0xec, 0xf2, 0x86, 0x7e, 0x09,
+	0xce, 0x25, 0x56, 0x64, 0x02, 0xce, 0x16, 0xab, 0xa9, 0xf5, 0xc2, 0x7a, 0xe9, 0x33, 0x75, 0xa4,
+	0xcf, 0xc1, 0x7d, 0x1b, 0xee, 0x6e, 0x91, 0x7c, 0x0e, 0xee, 0x5e, 0x1d, 0x4c, 0xb0, 0x36, 0x68,
+	0x00, 0xa3, 0x4b, 0xac, 0x6a, 0xc4, 0x23, 0x72, 0xcb, 0xb1, 0xbb, 0x1c, 0x1f, 0xbc, 0xcd, 0x6d,
+	0x14, 0xa1, 0x10, 0xf4, 0x2b, 0x70, 0x97, 0x9c, 0x17, 0x5c, 0x71, 0x33, 0x91, 0x34, 0xdc, 0x4c,
+	0x24, 0xf4, 0x0d, 0x0c, 0x17, 0xf3, 0xcd, 0x9c, 0x27, 0xe4, 0x19, 0xd8, 0xdb, 0xbd, 0x0e, 0x1d,
+	0x07, 0x9f, 0x9c, 0x95, 0x37, 0x67, 0x8d, 0x22, 0xb3, 0xb7, 0x7b, 0xf2, 0x75, 0x57, 0xe3, 0x38,
+	0xf0, 0x15, 0xa0, 0x8e, 0x1a, 0x39, 0x0f, 0xdc, 0x65, 0x56, 0xca, 0x8a, 0x52, 0x18, 0x31, 0x8c,
+	0x53, 0x8e, 0x91, 0x24, 0x5f, 0xc0, 0x50, 0x20, 0xdf, 0x23, 0x37, 0x92, 0xc6, 0xa2, 0xbf, 0xc3,
+	0x90, 0xa1, 0xb8, 0xdd, 0x49, 0x32, 0x83, 0x11, 0x37, 0xe8, 0xae, 0x76, 0x73, 0xc3, 0x6a, 0xc0,
+	0xee, 0xe3, 0xe4, 0x54, 0x67, 0x68, 0x3f, 0xce, 0x70, 0x35, 0xd0, 0x39, 0x3e, 0x05, 0x4b, 0x4c,
+	0x1d, 0x1d, 0x3e, 0x56, 0x61, 0x53, 0xfe, 0x6a, 0xc0, 0x2c, 0x71, 0x3e, 0x82, 0x21, 0xd7, 0x92,
+	0xf4, 0x2f, 0x0b, 0xbc, 0x45, 0x91, 0x65, 0x61, 0x1e, 0x93, 0x6f, 0xc1, 0x2f, 0x4a, 0xe4, 0xa1,
+	0x4c, 0x8b, 0x5c, 0xeb, 0x8f, 0x83, 0xa1, 0xa2, 0x5e, 0x95, 0xac, 0x0d, 0x90, 0xa7, 0xe0, 0x24,
+	0x28, 0x8d, 0xb2, 0x67, 0x94, 0x57, 0x03, 0xa6, 0xbc, 0xe4, 0x05, 0x38, 0x02, 0xa5, 0xd1, 0xed,
+	0xa7, 0xa5, 0x42, 0xe4, 0x1b, 0x70, 0xa3, 0x1d, 0x86, 0x7c, 0x7a, 0xd4, 0xf6, 0x4e, 0xf7, 0x6a,
+	0x35, 0x60, 0x75, 0x84, 0x9c, 0x82, 0x13, 0x85, 0x62, 0xea, 0x6a, 0x00, 0x28, 0x40, 0x3d, 0x15,
+	0x75, 0x45, 0x14, 0x8a, 0x73, 0x17, 0x9c, 0x90, 0x27, 0x74, 0x0d, 0xee, 0x32, 0x97, 0xbc, 0x22,
+	0x04, 0x8e, 0x24, 0xf2, 0x4c, 0xa7, 0xec, 0x30, 0x7d, 0x56, 0x6b, 0x90, 0xe6, 0x31, 0xfe, 0xa6,
+	0xf3, 0x74, 0x58, 0x6d, 0x90, 0xe7, 0xe0, 0x44, 0x59, 0xdc, 0x6d, 0x8b, 0xa9, 0x9d, 0x29, 0x3f,
+	0x7d, 0x0f, 0x27, 0x8b, 0x5d, 0x8a, 0xb9, 0x64, 0xf8, 0xeb, 0x2d, 0x0a, 0xd9, 0xe0, 0xad, 0xc3,
+	0x78, 0xf2, 0x0c, 0x7c, 0x99, 0x66, 0x28, 0x64, 0x98, 0x95, 0x46, 0xa8, 0x75, 0x90, 0x27, 0x30,
+	0x8a, 0xf4, 0x6d, 0x17, 0xaf, 0xb5, 0xa2, 0xcf, 0xee, 0x6d, 0xfa, 0xb7, 0x05, 0xe3, 0x46, 0x4a,
+	0x94, 0x45, 0x2e, 0x50, 0xad, 0xc7, 0x3e, 0xc5, 0xbb, 0x8b, 0xd8, 0xd4, 0x61, 0xac, 0x8f, 0x17,
+	0x51, 0x7d, 0xc9, 0x8b, 0x18, 0x75, 0xa7, 0x7d, 0xa6, 0xcf, 0x64, 0x06, 0xa0, 0x7e, 0xeb, 0x85,
+	0xeb, 0xb6, 0xb8, 0xf6, 0xb0, 0x4e, 0x94, 0x9c, 0x02, 0x08, 0xd5, 0x88, 0x3c, 0xc2, 0x8b, 0xd7,
+	0xd3, 0xa1, 0x96, 0xee, 0x78, 0xe8, 0x9f, 0x16, 0x9c, 0xac, 0x39, 0xae, 0x39, 0x96, 0x21, 0xc7,
+	0x5f, 0x44, 0xf2, 0xc1, 0x1a, 0x1e, 0xde, 0x64, 0xf7, 0x6f, 0x52, 0xbc, 0x38, 0x4d, 0x50, 0x48,
+	0x53, 0x83, 0xb1, 0xc8, 0xf7, 0xe0, 0xf1, 0x7a, 0x14, 0x66, 0x5d, 0x3e, 0xd3, 0x33, 0xe8, 0xce,
+	0x88, 0x35, 0x88, 0xfb, 0x72, 0xdd, 0xb6, 0x5c, 0x5a, 0x02, 0xfc, 0x87, 0xe9, 0x1d, 0x68, 0x30,
+	0x2d, 0xc0, 0x57, 0x3b, 0x92, 0xca, 0xff, 0x4b, 0xf0, 0x0f, 0x0b, 0x3e, 0x5d, 0xdf, 0xbc, 0x53,
+	0x7a, 0xf3, 0x28, 0xc2, 0x52, 0x62, 0xfc, 0xd1, 0xba, 0x53, 0xf0, 0x44, 0xfd, 0x4e, 0x68, 0xe1,
+	0x11, 0x6b, 0x4c, 0xf2, 0x1d, 0x8c, 0x65, 0x55, 0xe2, 0xd5, 0xbb, 0x46, 0xc3, 0xe4, 0xd0, 0xf3,
+	0x1e, 0x1c, 0x42, 0x05, 0x27, 0x6f, 0x53, 0xbc, 0x5b, 0xbc, 0x0f, 0xf3, 0x44, 0xcf, 0x41, 0x7d,
+	0xb0, 0x55, 0xd9, 0x3c, 0xeb, 0xfa, 0xac, 0xa4, 0x73, 0xbc, 0x53, 0x38, 0x93, 0x57, 0x63, 0x2a,
+	0xe9, 0x5d, 0x28, 0xe4, 0xa6, 0x4d, 0xdc, 0xd1, 0x80, 0x9e, 0xf7, 0x90, 0xf4, 0x6c, 0x06, 0xf6,
+	0x55, 0x49, 0x3c, 0x70, 0xde, 0x2c, 0xaf, 0x27, 0x03, 0x75, 0xd8, 0x2c, 0xaf, 0x27, 0x16, 0xf1,
+	0xc1, 0x5d, 0xfc, 0xbc, 0x9c, 0xb3, 0x89, 0xad, 0x7c, 0x8b, 0xf9, 0x66, 0xe2, 0x04, 0xaf, 0xc0,
+	0xbb, 0xdc, 0x6f, 0x64, 0xc1, 0x91, 0xbc, 0x84, 0xa3, 0x45, 0xb8, 0xdb, 0x91, 0xc7, 0xeb, 0xf6,
+	0xa4, 0xfb, 0x98, 0xd2, 0x41, 0xf0, 0x8f, 0x05, 0x47, 0xaa, 0xfb, 0x24, 0x80, 0x71, 0xfb, 0x2d,
+	0xac, 0xcf, 0x7f, 0xba, 0xae, 0xc9, 0x0f, 0xbe, 0x8f, 0x1e, 0x99, 0xfc, 0x00, 0xc7, 0x5d, 0xc2,
+	0xd8, 0x10, 0x3e, 0x80, 0x9e, 0x01, 0xd4, 0x9b, 0xa5, 0xc1, 0x27, 0xcd, 0x6b, 0xa4, 0x37, 0xad,
+	0x8f, 0x0d, 0x60, 0xdc, 0xb6, 0xbc, 0xcd, 0xe6, 0xc1, 0x18, 0xfa, 0x9c, 0x1f, 0x61, 0xb2, 0xc1,
+	0x3c, 0x6e, 0x1e, 0xa4, 0xf3, 0x30, 0xda, 0x12, 0xd2, 0x6d, 0x40, 0xed, 0xef, 0xd1, 0x6e, 0x86,
+	0xfa, 0x1f, 0xfd, 0xd5, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x93, 0xd1, 0x77, 0xd2, 0xdd, 0x07,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -970,10 +1205,7 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type KvStoreClient interface {
 	// Get the value associated with a key.
-	Get(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Result, error)
-	Set(ctx context.Context, in *KeyValue, opts ...grpc.CallOption) (*Result, error)
-	Clear(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Result, error)
-	CAS(ctx context.Context, in *CASArg, opts ...grpc.CallOption) (*Result, error)
+	Call(ctx context.Context, in *ClientRequest, opts ...grpc.CallOption) (*Success, error)
 }
 
 type kvStoreClient struct {
@@ -984,36 +1216,9 @@ func NewKvStoreClient(cc *grpc.ClientConn) KvStoreClient {
 	return &kvStoreClient{cc}
 }
 
-func (c *kvStoreClient) Get(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Result, error) {
-	out := new(Result)
-	err := c.cc.Invoke(ctx, "/pb.KvStore/Get", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *kvStoreClient) Set(ctx context.Context, in *KeyValue, opts ...grpc.CallOption) (*Result, error) {
-	out := new(Result)
-	err := c.cc.Invoke(ctx, "/pb.KvStore/Set", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *kvStoreClient) Clear(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Result, error) {
-	out := new(Result)
-	err := c.cc.Invoke(ctx, "/pb.KvStore/Clear", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *kvStoreClient) CAS(ctx context.Context, in *CASArg, opts ...grpc.CallOption) (*Result, error) {
-	out := new(Result)
-	err := c.cc.Invoke(ctx, "/pb.KvStore/CAS", in, out, opts...)
+func (c *kvStoreClient) Call(ctx context.Context, in *ClientRequest, opts ...grpc.CallOption) (*Success, error) {
+	out := new(Success)
+	err := c.cc.Invoke(ctx, "/pb.KvStore/Call", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1023,84 +1228,27 @@ func (c *kvStoreClient) CAS(ctx context.Context, in *CASArg, opts ...grpc.CallOp
 // KvStoreServer is the server API for KvStore service.
 type KvStoreServer interface {
 	// Get the value associated with a key.
-	Get(context.Context, *Key) (*Result, error)
-	Set(context.Context, *KeyValue) (*Result, error)
-	Clear(context.Context, *Empty) (*Result, error)
-	CAS(context.Context, *CASArg) (*Result, error)
+	Call(context.Context, *ClientRequest) (*Success, error)
 }
 
 func RegisterKvStoreServer(s *grpc.Server, srv KvStoreServer) {
 	s.RegisterService(&_KvStore_serviceDesc, srv)
 }
 
-func _KvStore_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Key)
+func _KvStore_Call_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClientRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KvStoreServer).Get(ctx, in)
+		return srv.(KvStoreServer).Call(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.KvStore/Get",
+		FullMethod: "/pb.KvStore/Call",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KvStoreServer).Get(ctx, req.(*Key))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _KvStore_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(KeyValue)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(KvStoreServer).Set(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.KvStore/Set",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KvStoreServer).Set(ctx, req.(*KeyValue))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _KvStore_Clear_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(KvStoreServer).Clear(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.KvStore/Clear",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KvStoreServer).Clear(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _KvStore_CAS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CASArg)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(KvStoreServer).CAS(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.KvStore/CAS",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KvStoreServer).CAS(ctx, req.(*CASArg))
+		return srv.(KvStoreServer).Call(ctx, req.(*ClientRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1110,214 +1258,206 @@ var _KvStore_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*KvStoreServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Get",
-			Handler:    _KvStore_Get_Handler,
-		},
-		{
-			MethodName: "Set",
-			Handler:    _KvStore_Set_Handler,
-		},
-		{
-			MethodName: "Clear",
-			Handler:    _KvStore_Clear_Handler,
-		},
-		{
-			MethodName: "CAS",
-			Handler:    _KvStore_CAS_Handler,
+			MethodName: "Call",
+			Handler:    _KvStore_Call_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "kv.proto",
 }
 
-// PbftLocalClient is the client API for PbftLocal service.
+// PbftClient is the client API for Pbft service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type PbftLocalClient interface {
-	AppendEntries(ctx context.Context, in *AppendEntriesArgs, opts ...grpc.CallOption) (*AppendEntriesRet, error)
-	RequestVote(ctx context.Context, in *RequestVoteArgs, opts ...grpc.CallOption) (*RequestVoteRet, error)
+type PbftClient interface {
+	// rpc ClientRequestPBFT(ClientRequest) returns (ClientResponse) {}
+	PrePreparePBFT(ctx context.Context, in *PrePrepareMsg, opts ...grpc.CallOption) (*Success, error)
+	PreparePBFT(ctx context.Context, in *PrepareMsg, opts ...grpc.CallOption) (*Success, error)
+	CommitPBFT(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*Success, error)
+	ViewChangePBFT(ctx context.Context, in *ViewChangeMsg, opts ...grpc.CallOption) (*Success, error)
+	SendResponseBack(ctx context.Context, in *ClientResponse, opts ...grpc.CallOption) (*Success, error)
 }
 
-type pbftLocalClient struct {
+type pbftClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewPbftLocalClient(cc *grpc.ClientConn) PbftLocalClient {
-	return &pbftLocalClient{cc}
+func NewPbftClient(cc *grpc.ClientConn) PbftClient {
+	return &pbftClient{cc}
 }
 
-func (c *pbftLocalClient) AppendEntries(ctx context.Context, in *AppendEntriesArgs, opts ...grpc.CallOption) (*AppendEntriesRet, error) {
-	out := new(AppendEntriesRet)
-	err := c.cc.Invoke(ctx, "/pb.PbftLocal/AppendEntries", in, out, opts...)
+func (c *pbftClient) PrePreparePBFT(ctx context.Context, in *PrePrepareMsg, opts ...grpc.CallOption) (*Success, error) {
+	out := new(Success)
+	err := c.cc.Invoke(ctx, "/pb.Pbft/PrePreparePBFT", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *pbftLocalClient) RequestVote(ctx context.Context, in *RequestVoteArgs, opts ...grpc.CallOption) (*RequestVoteRet, error) {
-	out := new(RequestVoteRet)
-	err := c.cc.Invoke(ctx, "/pb.PbftLocal/RequestVote", in, out, opts...)
+func (c *pbftClient) PreparePBFT(ctx context.Context, in *PrepareMsg, opts ...grpc.CallOption) (*Success, error) {
+	out := new(Success)
+	err := c.cc.Invoke(ctx, "/pb.Pbft/PreparePBFT", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// PbftLocalServer is the server API for PbftLocal service.
-type PbftLocalServer interface {
-	AppendEntries(context.Context, *AppendEntriesArgs) (*AppendEntriesRet, error)
-	RequestVote(context.Context, *RequestVoteArgs) (*RequestVoteRet, error)
+func (c *pbftClient) CommitPBFT(ctx context.Context, in *CommitMsg, opts ...grpc.CallOption) (*Success, error) {
+	out := new(Success)
+	err := c.cc.Invoke(ctx, "/pb.Pbft/CommitPBFT", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
-func RegisterPbftLocalServer(s *grpc.Server, srv PbftLocalServer) {
-	s.RegisterService(&_PbftLocal_serviceDesc, srv)
+func (c *pbftClient) ViewChangePBFT(ctx context.Context, in *ViewChangeMsg, opts ...grpc.CallOption) (*Success, error) {
+	out := new(Success)
+	err := c.cc.Invoke(ctx, "/pb.Pbft/ViewChangePBFT", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
-func _PbftLocal_AppendEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AppendEntriesArgs)
+func (c *pbftClient) SendResponseBack(ctx context.Context, in *ClientResponse, opts ...grpc.CallOption) (*Success, error) {
+	out := new(Success)
+	err := c.cc.Invoke(ctx, "/pb.Pbft/SendResponseBack", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PbftServer is the server API for Pbft service.
+type PbftServer interface {
+	// rpc ClientRequestPBFT(ClientRequest) returns (ClientResponse) {}
+	PrePreparePBFT(context.Context, *PrePrepareMsg) (*Success, error)
+	PreparePBFT(context.Context, *PrepareMsg) (*Success, error)
+	CommitPBFT(context.Context, *CommitMsg) (*Success, error)
+	ViewChangePBFT(context.Context, *ViewChangeMsg) (*Success, error)
+	SendResponseBack(context.Context, *ClientResponse) (*Success, error)
+}
+
+func RegisterPbftServer(s *grpc.Server, srv PbftServer) {
+	s.RegisterService(&_Pbft_serviceDesc, srv)
+}
+
+func _Pbft_PrePreparePBFT_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrePrepareMsg)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PbftLocalServer).AppendEntries(ctx, in)
+		return srv.(PbftServer).PrePreparePBFT(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.PbftLocal/AppendEntries",
+		FullMethod: "/pb.Pbft/PrePreparePBFT",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PbftLocalServer).AppendEntries(ctx, req.(*AppendEntriesArgs))
+		return srv.(PbftServer).PrePreparePBFT(ctx, req.(*PrePrepareMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PbftLocal_RequestVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestVoteArgs)
+func _Pbft_PreparePBFT_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareMsg)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PbftLocalServer).RequestVote(ctx, in)
+		return srv.(PbftServer).PreparePBFT(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.PbftLocal/RequestVote",
+		FullMethod: "/pb.Pbft/PreparePBFT",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PbftLocalServer).RequestVote(ctx, req.(*RequestVoteArgs))
+		return srv.(PbftServer).PreparePBFT(ctx, req.(*PrepareMsg))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _PbftLocal_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "pb.PbftLocal",
-	HandlerType: (*PbftLocalServer)(nil),
+func _Pbft_CommitPBFT_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommitMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PbftServer).CommitPBFT(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Pbft/CommitPBFT",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PbftServer).CommitPBFT(ctx, req.(*CommitMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Pbft_ViewChangePBFT_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ViewChangeMsg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PbftServer).ViewChangePBFT(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Pbft/ViewChangePBFT",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PbftServer).ViewChangePBFT(ctx, req.(*ViewChangeMsg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Pbft_SendResponseBack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClientResponse)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PbftServer).SendResponseBack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Pbft/SendResponseBack",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PbftServer).SendResponseBack(ctx, req.(*ClientResponse))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Pbft_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "pb.Pbft",
+	HandlerType: (*PbftServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AppendEntries",
-			Handler:    _PbftLocal_AppendEntries_Handler,
+			MethodName: "PrePreparePBFT",
+			Handler:    _Pbft_PrePreparePBFT_Handler,
 		},
 		{
-			MethodName: "RequestVote",
-			Handler:    _PbftLocal_RequestVote_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "kv.proto",
-}
-
-// PbftGlobalClient is the client API for PbftGlobal service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type PbftGlobalClient interface {
-	AppendEntries(ctx context.Context, in *AppendEntriesArgs, opts ...grpc.CallOption) (*AppendEntriesRet, error)
-	RequestVote(ctx context.Context, in *RequestVoteArgs, opts ...grpc.CallOption) (*RequestVoteRet, error)
-}
-
-type pbftGlobalClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewPbftGlobalClient(cc *grpc.ClientConn) PbftGlobalClient {
-	return &pbftGlobalClient{cc}
-}
-
-func (c *pbftGlobalClient) AppendEntries(ctx context.Context, in *AppendEntriesArgs, opts ...grpc.CallOption) (*AppendEntriesRet, error) {
-	out := new(AppendEntriesRet)
-	err := c.cc.Invoke(ctx, "/pb.PbftGlobal/AppendEntries", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *pbftGlobalClient) RequestVote(ctx context.Context, in *RequestVoteArgs, opts ...grpc.CallOption) (*RequestVoteRet, error) {
-	out := new(RequestVoteRet)
-	err := c.cc.Invoke(ctx, "/pb.PbftGlobal/RequestVote", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// PbftGlobalServer is the server API for PbftGlobal service.
-type PbftGlobalServer interface {
-	AppendEntries(context.Context, *AppendEntriesArgs) (*AppendEntriesRet, error)
-	RequestVote(context.Context, *RequestVoteArgs) (*RequestVoteRet, error)
-}
-
-func RegisterPbftGlobalServer(s *grpc.Server, srv PbftGlobalServer) {
-	s.RegisterService(&_PbftGlobal_serviceDesc, srv)
-}
-
-func _PbftGlobal_AppendEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AppendEntriesArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PbftGlobalServer).AppendEntries(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.PbftGlobal/AppendEntries",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PbftGlobalServer).AppendEntries(ctx, req.(*AppendEntriesArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _PbftGlobal_RequestVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestVoteArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PbftGlobalServer).RequestVote(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.PbftGlobal/RequestVote",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PbftGlobalServer).RequestVote(ctx, req.(*RequestVoteArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _PbftGlobal_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "pb.PbftGlobal",
-	HandlerType: (*PbftGlobalServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "AppendEntries",
-			Handler:    _PbftGlobal_AppendEntries_Handler,
+			MethodName: "PreparePBFT",
+			Handler:    _Pbft_PreparePBFT_Handler,
 		},
 		{
-			MethodName: "RequestVote",
-			Handler:    _PbftGlobal_RequestVote_Handler,
+			MethodName: "CommitPBFT",
+			Handler:    _Pbft_CommitPBFT_Handler,
+		},
+		{
+			MethodName: "ViewChangePBFT",
+			Handler:    _Pbft_ViewChangePBFT_Handler,
+		},
+		{
+			MethodName: "SendResponseBack",
+			Handler:    _Pbft_SendResponseBack_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

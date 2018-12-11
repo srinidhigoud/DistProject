@@ -1,6 +1,9 @@
 package util
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	rand "math/rand"
@@ -16,81 +19,126 @@ import (
 	// "DistProject/pb"
 )
 
-// Messages that can be passed from the PbftLocal RPC server to the main loop for AppendEntries
-type AppendEntriesInput struct {
+// Messages that can be passed from the Pbft RPC server to the main loop for AppendEntries
+
+type PrePrepareMsgInput struct {
+	Arg *pb.PrePrepareMsg
+	// Response chan pb.PbftMsgAccepted
 }
 
-type AppendEntriesInput struct {
-	Arg      *pb.AppendEntriesArgs
-	Response chan pb.AppendEntriesRet
+type PrepareMsgInput struct {
+	Arg *pb.PrepareMsg
+	// Response chan pb.PbftMsgAccepted
 }
 
-// Messages that can be passed from the PbftLocal RPC server to the main loop for VoteInput
-type VoteInput struct {
-	Arg      *pb.RequestVoteArgs
-	Response chan pb.RequestVoteRet
+type CommitMsgInput struct {
+	Arg *pb.CommitMsg
+	// Response chan pb.PbftMsgAccepted
 }
 
-// Struct off of which we shall hang the PbftLocal service
-type PbftLocal struct {
-	AppendChan chan AppendEntriesInput
-	VoteChan   chan VoteInput
+type ViewChangeMsgInput struct {
+	Arg *pb.ViewChangeMsg
+	// Response chan pb.PbftMsgAccepted
+}
+type Pbft struct {
+	PrePrepareMsgChan chan PrePrepareMsgInput
+	PrepareMsgChan    chan PrepareMsgInput
+	CommitMsgChan     chan CommitMsgInput
+	ViewChangeMsgChan chan ViewChangeMsgInput
+	ResponseChan      chan *pb.ClientResponse
 }
 
-type PbftGlobal struct {
-	ResponseChan chan pb.ClientResponse
-}
-
-func (r *PbftLocal) AppendEntries(ctx context.Context, Arg *pb.AppendEntriesArgs) (*pb.AppendEntriesRet, error) {
-	c := make(chan pb.AppendEntriesRet)
-	r.AppendChan <- AppendEntriesInput{Arg: Arg, Response: c}
-	result := <-c
+func (r *Pbft) PrePreparePBFT(ctx context.Context, arg *pb.PrePrepareMsg) (*pb.Success, error) {
+	r.PrePrepareMsgChan <- PrePrepareMsgInput{Arg: arg}
+	result := pb.Success{}
 	return &result, nil
 }
 
-func (r *PbftLocal) RequestVote(ctx context.Context, Arg *pb.RequestVoteArgs) (*pb.RequestVoteRet, error) {
-	c := make(chan pb.RequestVoteRet)
-	r.VoteChan <- VoteInput{Arg: Arg, Response: c}
-	result := <-c
+func (r *Pbft) PreparePBFT(ctx context.Context, arg *pb.PrepareMsg) (*pb.Success, error) {
+	r.PrepareMsgChan <- PrepareMsgInput{Arg: arg}
+	result := pb.Success{}
 	return &result, nil
 }
 
-func (r *PbftGlobal) SendResponseBack(ctx context.Context, Arg *pb.ClientResponse) {
-	r.AppendChan <- Arg
+func (r *Pbft) CommitPBFT(ctx context.Context, arg *pb.CommitMsg) (*pb.Success, error) {
+	r.CommitMsgChan <- CommitMsgInput{Arg: arg}
+	result := pb.Success{}
+	return &result, nil
 }
 
-// Compute a random duration in milliseconds
-func RandomDuration(r *rand.Rand, heartbeat bool) time.Duration {
-	// Constant
-	if heartbeat {
-		const DurationMax = 5000
-		const DurationMin = 1000
-		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
-	} else {
-		const DurationMax = 50000
-		const DurationMin = 10000
-		return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
-	}
+func (r *Pbft) ViewChangePBFT(ctx context.Context, arg *pb.ViewChangeMsg) (*pb.Success, error) {
+	r.ViewChangeMsgChan <- ViewChangeMsgInput{Arg: arg}
+	result := pb.Success{}
+	return &result, nil
+}
+
+func (r *Pbft) SendResponseBack(ctx context.Context, Arg *pb.ClientResponse) (*pb.Success, error) {
+	r.ResponseChan <- Arg
+	result := pb.Success{}
+	return &result, nil
 
 }
 
-// Restart the supplied timer using a random timeout based on function above
-func RestartTimer(timer *time.Timer, r *rand.Rand, heartbeat bool) {
+func RandomDuration(r *rand.Rand) time.Duration {
+	const DurationMax = 4000
+	const DurationMin = 1000
+	return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
+}
+
+func RestartTimer(timer *time.Timer, r *rand.Rand) {
 	stopped := timer.Stop()
-	// If stopped is false that means someone stopped before us, which could be due to the timer going off before this,
-	// in which case we just drain notifications.
 	if !stopped {
-		// Loop for any queued notifications
 		for len(timer.C) > 0 {
 			<-timer.C
 		}
-
 	}
-	timer.Reset(RandomDuration(r, heartbeat))
+	timer.Reset(RandomDuration(r))
 }
 
-// Launch a GRPC service for this PbftLocal peer.
-func RunPbftLocalServer(r *PbftLocal, port int) {
+func StopTimer(timer *time.Timer) {
+	stopped := timer.Stop()
+	if !stopped {
+		for len(timer.C) > 0 {
+			<-timer.C
+		}
+	}
+}
+
+type SecondsTimer struct {
+	Timer *time.Timer
+	End   time.Time
+}
+
+func NewSecondsTimer(t time.Duration) *SecondsTimer {
+	return &SecondsTimer{time.NewTimer(t), time.Now().Add(t)}
+}
+
+func (s *SecondsTimer) Reset(t time.Duration) {
+	stopped := s.Timer.Stop()
+	if !stopped {
+		for len(s.Timer.C) > 0 {
+			<-s.Timer.C
+		}
+	}
+	s.Timer.Reset(t)
+	s.End = time.Now().Add(t)
+}
+
+func (s *SecondsTimer) Stop() {
+	stopped := s.Timer.Stop()
+	if !stopped {
+		for len(s.Timer.C) > 0 {
+			<-s.Timer.C
+		}
+	}
+	s.Timer.Stop()
+}
+
+func (s *SecondsTimer) TimeRemaining() time.Duration {
+	return s.End.Sub(time.Now())
+}
+
+func RunPbftServer(r *Pbft, port int) {
 	// Convert port to a string form
 	portString := fmt.Sprintf(":%d", port)
 	// Create socket that listens on the supplied port
@@ -102,7 +150,7 @@ func RunPbftLocalServer(r *PbftLocal, port int) {
 	// Create a new GRPC server
 	s := grpc.NewServer()
 
-	pb.RegisterPbftLocalServer(s, r)
+	pb.RegisterPbftServer(s, r)
 	log.Printf("Going to listen on port %v", port)
 
 	// Start serving, this will block this function and only return when done.
@@ -111,49 +159,28 @@ func RunPbftLocalServer(r *PbftLocal, port int) {
 	}
 }
 
-func RunPbftGlobalServer(r *PbftGlobal, port int) {
-	// Convert port to a string form
-	portString := fmt.Sprintf(":%d", port)
-	// Create socket that listens on the supplied port
-	c, err := net.Listen("tcp", portString)
-	if err != nil {
-		// Note the use of Fatalf which will exit the program after reporting the error.
-		log.Fatalf("Could not create listening socket %v", err)
-	}
-	// Create a new GRPC server
-	s := grpc.NewServer()
-
-	pb.RegisterPbftGlobalServer(s, r)
-	log.Printf("Going to listen on port %v", port)
-
-	// Start serving, this will block this function and only return when done.
-	if err := s.Serve(c); err != nil {
-		log.Fatalf("Failed to serve %v", err)
-	}
-}
-
-func ConnectToPeer(peer string) (pb.PbftLocalClient, error) {
+func ConnectToPeer(peer string) (pb.PbftClient, error) {
 	backoffConfig := grpc.DefaultBackoffConfig
 	// Choose an aggressive backoff strategy here.
 	backoffConfig.MaxDelay = 500 * time.Millisecond
 	conn, err := grpc.Dial(peer, grpc.WithInsecure(), grpc.WithBackoffConfig(backoffConfig))
 	// Ensure connection did not fail, which should not happen since this happens in the background
 	if err != nil {
-		return pb.NewPbftLocalClient(nil), err
+		return pb.NewPbftClient(nil), err
 	}
-	return pb.NewPbftLocalClient(conn), nil
+	return pb.NewPbftClient(conn), nil
 }
 
-func ConnectToClient(client string) (pb.PbftGlobalClient, error) {
+func ConnectToClient(client string) (pb.PbftClient, error) {
 	backoffConfig := grpc.DefaultBackoffConfig
 	// Choose an aggressive backoff strategy here.
 	backoffConfig.MaxDelay = 500 * time.Millisecond
 	conn, err := grpc.Dial(client, grpc.WithInsecure(), grpc.WithBackoffConfig(backoffConfig))
 	// Ensure connection did not fail, which should not happen since this happens in the background
 	if err != nil {
-		return pb.NewPbftGlobalClient(nil), err
+		return pb.NewPbftClient(nil), err
 	}
-	return pb.NewPbftGlobalClient(conn), nil
+	return pb.NewPbftClient(conn), nil
 }
 
 ////////////////////debug///////////////////
@@ -176,4 +203,19 @@ func PrintLogEntries(local_log []*pb.Entry) {
 		log.Printf("idx %v log : Index %v Term %v Cmd %v", idx, entry.Index, entry.Term, ecmd)
 		// local_logs = entryLog + " " + local_logs
 	}
+}
+
+func Hash(content []byte) string {
+	h := sha256.New()
+	h.Write(content)
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func Digest(object interface{}) string {
+	msg, err := json.Marshal(object)
+	if err != nil {
+		// return "", err
+		log.Fatal("Cannot make digest")
+	}
+	return Hash(msg)
 }
