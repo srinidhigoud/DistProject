@@ -21,9 +21,8 @@ import (
 )
 
 type Validation struct {
-	t int64
-	k string
-	v string
+	t   int64
+	res pb.Result
 }
 
 func usage() {
@@ -34,14 +33,15 @@ func usage() {
 //res.GetKv().Key, res.GetKv().Value
 
 func compare(v1 Validation, v2 Validation) bool {
-	if v1.t == v2.t {
-		if v1.k == v2.k {
-			if v1.v == v2.v {
-				return true
-			}
-		}
-	}
-	return false
+	return v1 == v2
+	// if v1.t == v2.t {
+	// 	if v1.k == v2.k {
+	// 		if v1.v == v2.v {
+	// 			return true
+	// 		}
+	// 	}
+	// }
+	// return false
 }
 
 func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft) (*pb.Result, error) {
@@ -53,8 +53,8 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 		case res := <-r.ResponseChan:
 			log.Printf("got a response")
 			if v := mapS[res.SequenceID]; v < 2 {
-				log.Printf("got in")
-				check := Validation{t: res.Timestamp, k: res.NodeResult.GetKv().Key, v: res.NodeResult.GetKv().Value}
+				log.Printf("got in") //res.NodeResult.GetKv().Key
+				check := Validation{t: res.Timestamp, res: res.NodeResult}
 				if v > 0 {
 					checkee := mapV[v-1]
 					if compare(checkee, check) {
