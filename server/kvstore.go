@@ -24,6 +24,7 @@ type KVStore struct {
 
 func (s *KVStore) Call(ctx context.Context, c *pb.ClientRequest) (*pb.Success, error) {
 	// Send request over the channel
+	log.Printf("Client just called")
 	s.C <- InputChannelType{clientRequest: c}
 	result := pb.Success{}
 	return &result, nil
