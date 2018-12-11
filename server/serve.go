@@ -53,31 +53,33 @@ func printPbftMsgAccepted(pma pb.PbftMsgAccepted, view int64, seq int64) {
 }
 
 type logEntry struct {
-	viewId         int64
-	sequenceID     int64
-	clientReq      *pb.ClientRequest
-	prePrep        *pb.PrePrepareMsg
-	pre            []*pb.PrepareMsg
-	com            []*pb.CommitMsg
-	prepared       bool
-	committed      bool
-	committedLocal bool
+	viewId     int64             //`json:"group,omitempty" bson:",omitempty"`
+	sequenceID int64             //`json:"group,omitempty" bson:",omitempty"`
+	clientReq  *pb.ClientRequest //`json:"group,omitempty" bson:",omitempty"`
+	prePrep    *pb.PrePrepareMsg //`json:"group,omitempty" bson:",omitempty"`
+	pre        []*pb.PrepareMsg  //`json:"group,omitempty" bson:",omitempty"`
+	com        []*pb.CommitMsg   //`json:"group,omitempty" bson:",omitempty"`
+	// pMsg       []*pb.PbftMsgAccepted //`json:"group,omitempty" bson:",omitempty"`
+	// clientRes      *pb.ClientResponse    //`json:"group,omitempty" bson:",omitempty"`
+	prepared       bool //`json:"group,omitempty" bson:",omitempty"`
+	committed      bool //`json:"group,omitempty" bson:",omitempty"`
+	committedLocal bool //`json:"group,omitempty" bson:",omitempty"`
 }
 
-func verifyPrePrepare(prePreMsg *pb.PrePrepareMsg, viewId int64, sequenceID int64, logEntries []logEntry) bool {
+func verifyPrePrepare(prePrepareMsg *pb.PrePrepareMsg, viewId int64, sequenceID int64, logEntries []logEntry) bool {
 
-	if prePreMsg.ViewId != viewId {
+	if prePrepareMsg.ViewId != viewId {
 		log.Printf("here1")
 		return false
 	}
 	if sequenceID != -1 {
-		if sequenceID > prePreMsg.SequenceID {
+		if sequenceID > prePrepareMsg.SequenceID {
 			log.Printf("here2")
 			return false
 		}
 	}
-	digest := util.Digest(prePreMsg.Request)
-	if digest != prePreMsg.Digest {
+	digest := util.Digest(prePrepareMsg.Request)
+	if digest != prePrepareMsg.Digest {
 		log.Printf("here3")
 		return false
 	}
@@ -120,12 +122,12 @@ func verifyCommit(commitMsg *pb.CommitMsg, viewId int64, sequenceID int64, logEn
 }
 
 func isPrepared(entry logEntry) bool {
-	prePreMsg := entry.prePrep
-	if prePreMsg != nil {
+	prePrepareMsg := entry.prePrep
+	if prePrepareMsg != nil {
 		validPrepares := 0
 		for i := 0; i < len(entry.pre); i++ {
 			prepareMsg := entry.pre[i]
-			if prepareMsg.ViewId == prePreMsg.ViewId && prepareMsg.SequenceID == prePreMsg.SequenceID && prepareMsg.Digest == prePreMsg.Digest {
+			if prepareMsg.ViewId == prePrepareMsg.ViewId && prepareMsg.SequenceID == prePrepareMsg.SequenceID && prepareMsg.Digest == prePrepareMsg.Digest {
 				validPrepares += 1
 			}
 		}
@@ -137,11 +139,11 @@ func isPrepared(entry logEntry) bool {
 func isCommitted(entry logEntry) bool {
 	prepared := isPrepared(entry)
 	if prepared {
-		prePreMsg := entry.prePrep
+		prePrepareMsg := entry.prePrep
 		validCommits := 0
 		for i := 0; i < len(entry.com); i++ {
 			commitMsg := entry.com[i]
-			if commitMsg.ViewId == prePreMsg.ViewId && commitMsg.SequenceID == prePreMsg.SequenceID && commitMsg.Digest == prePreMsg.Digest {
+			if commitMsg.ViewId == prePrepareMsg.ViewId && commitMsg.SequenceID == prePrepareMsg.SequenceID && commitMsg.Digest == prePrepareMsg.Digest {
 				validCommits += 1
 			}
 		}
@@ -153,11 +155,11 @@ func isCommitted(entry logEntry) bool {
 func isCommittedLocal(entry logEntry) bool {
 	committed := isCommitted(entry)
 	if committed {
-		prePreMsg := entry.prePrep
+		prePrepareMsg := entry.prePrep
 		validCommits := 0
 		for i := 0; i < len(entry.com); i++ {
 			commitMsg := entry.com[i]
-			if commitMsg.ViewId == prePreMsg.ViewId && commitMsg.SequenceID == prePreMsg.SequenceID && commitMsg.Digest == prePreMsg.Digest {
+			if commitMsg.ViewId == prePrepareMsg.ViewId && commitMsg.SequenceID == prePrepareMsg.SequenceID && commitMsg.Digest == prePrepareMsg.Digest {
 				validCommits += 1
 			}
 		}
@@ -241,7 +243,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 	myId := int64(port) % 3001
 	// timeInterval := 4000 * time.Millisecond
 	// Create a timer and start running it
-	// timer := time.NewTimer(util.RandomDuration(r))
+	timer := time.NewTimer(util.RandomDuration(r))
 	viewChangeTimer := util.NewSecondsTimer(util.RandomDuration(r))
 	// util.StopTimer(timer)
 	viewChangeTimer.Stop()
@@ -251,9 +253,9 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 
 	for {
 		select {
-		// case <-timer.C:
-		// 	// printMyStoreAndLog(logEntries, s, currentView, seqId)
-		// 	util.RestartTimer(timer, r)
+		case <-timer.C:
+			// printMyStoreAndLog(logEntries, s, currentView, seqId)
+			util.RestartTimer(timer, r)
 		case <-viewChangeTimer.Timer.C:
 			newView := (currentView + 1) % 4
 			log.Printf("Timeout - initiate view change. New view - %v", newView)
@@ -318,10 +320,53 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				numberOfVotes = 0
 				seqId = pbftVc.Arg.LastSequenceID
 			}
-
+		case pbftClr := <-s.C:
+			clientReq := pbftClr.clientRequest
+			if !transitionPhase {
+				iAmLeader := currentView == myId
+				if iAmLeader {
+					log.Printf("Received ClientRequestChan %v", clientReq.ClientID)
+					printClientRequest(*clientReq, currentView, seqId)
+					// Do something here as primary to return initially to client
+					seqId += 1
+					// clientId := clientReq.ClientID
+					// timestamp := clientReq.Timestamp
+					// res := pb.Result{Result: &pb.Result_S{S: &pb.Success{}}}
+					digest := util.Digest(clientReq)
+					if isByzantine {
+						digest = tamper(digest)
+					}
+					prePrepareMsg := pb.PrePrepareMsg{ViewId: currentView, SequenceID: seqId, Digest: digest, Request: clientReq, Node: id}
+					for p, c := range peerClients {
+						go func(c pb.PbftClient, p string) {
+							_, _ = c.PrePreparePBFT(context.Background(), &prePrepareMsg)
+							// pbftMsgAcceptedChan <- PbftMsgAccepted{ret: _, _: err, peer: p}
+						}(c, p)
+					}
+					newEntry := logEntry{viewId: currentView, sequenceID: seqId, clientReq: clientReq, prePrep: &prePrepareMsg, pre: make([]*pb.PrepareMsg, maxMsgLogsSize), com: make([]*pb.CommitMsg, maxMsgLogsSize), prepared: false, committed: false, committedLocal: false}
+					// logEntries[newEntry.sequenceID] = newEntry
+					if int64(len(logEntries)) >= seqId+1 {
+						// Should take the previous slot
+						logEntries[seqId] = newEntry
+					} else {
+						logEntries = append(logEntries, newEntry)
+					}
+					// responseBack := pb.ClientResponse{ViewId: currentView, Timestamp: timestamp, ClientID: clientId, Node: id, NodeResult: &res, SequenceID: seqId}
+					// log.Printf("Sending back responseBack - %v", responseBack)
+					printMyStoreAndLog(logEntries, s, currentView, seqId)
+					// pbftClr.Response <- responseBack
+				} else {
+					// Need to send some kind of redirect message
+					log.Printf("Send Back Redirect message - View Change")
+				}
+			} else {
+				log.Printf("Received ClientRequestChan %v", clientReq.ClientID)
+				log.Printf("But.....Requested View Change")
+				// log.Printf("Send Back Redirect message - View Change")
+			}
 		case pbftPrePrep := <-pbft.PrePrepareMsgChan:
-			prePreMsg := pbftPrePrep.Arg
-			seqId = prePreMsg.SequenceID
+			prePrepareMsg := pbftPrePrep.Arg
+			seqId = prePrepareMsg.SequenceID
 			if !transitionPhase {
 				if viewChangeTimer.TimeRemaining() < 100*time.Millisecond {
 					dur := util.RandomDuration(r)
@@ -329,26 +374,26 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					viewChangeTimer.Reset(dur)
 				}
 				log.Printf("Received PrePrepareMsgChan %v from primary %v", pbftPrePrep.Arg, pbftPrePrep.Arg.Node)
-				printPrePrepareMsg(*prePreMsg, currentView, seqId)
-				verified := verifyPrePrepare(prePreMsg, currentView, seqId, logEntries)
+				printPrePrepareMsg(*prePrepareMsg, currentView, seqId)
+				verified := verifyPrePrepare(prePrepareMsg, currentView, seqId, logEntries)
 				if verified {
-					digest := prePreMsg.Digest
+					digest := prePrepareMsg.Digest
 					if isByzantine {
 						digest = tamper(digest)
 					}
-					prepareMsg := pb.PrepareMsg{ViewId: prePreMsg.ViewId, SequenceID: prePreMsg.SequenceID, Digest: digest, Node: strconv.FormatInt(myId+3001, 10)}
-					if prePreMsg.SequenceID+1 <= int64(len(logEntries)) {
-						log.Printf("Had received a prepare msg before, so writing on previous seqId - %v", prePreMsg.SequenceID)
-						oldEntry := logEntries[prePreMsg.SequenceID]
-						oldEntry.prePrep = prePreMsg
-						oldEntry.clientReq = prePreMsg.Request
+					prepareMsg := pb.PrepareMsg{ViewId: prePrepareMsg.ViewId, SequenceID: prePrepareMsg.SequenceID, Digest: digest, Node: strconv.FormatInt(myId+3001, 10)}
+					if prePrepareMsg.SequenceID+1 <= int64(len(logEntries)) {
+						log.Printf("Had received a prepare msg before, so writing on previous seqId - %v", prePrepareMsg.SequenceID)
+						oldEntry := logEntries[prePrepareMsg.SequenceID]
+						oldEntry.prePrep = prePrepareMsg
+						oldEntry.clientReq = prePrepareMsg.Request
 						oldPrepares := oldEntry.pre
 						oldPrepares = append(oldPrepares, &prepareMsg)
 						oldEntry.pre = oldPrepares
-						logEntries[prePreMsg.SequenceID] = oldEntry
+						logEntries[prePrepareMsg.SequenceID] = oldEntry
 					} else {
 						log.Printf("Appending new entry to log")
-						newEntry := logEntry{viewId: prePreMsg.ViewId, sequenceID: prePreMsg.SequenceID, clientReq: prePreMsg.Request, prePrep: prePreMsg, pre: make([]*pb.PrepareMsg, maxMsgLogsSize), com: make([]*pb.CommitMsg, maxMsgLogsSize), prepared: false, committed: false, committedLocal: false}
+						newEntry := logEntry{viewId: prePrepareMsg.ViewId, sequenceID: prePrepareMsg.SequenceID, clientReq: prePrepareMsg.Request, prePrep: prePrepareMsg, pre: make([]*pb.PrepareMsg, maxMsgLogsSize), com: make([]*pb.CommitMsg, maxMsgLogsSize), prepared: false, committed: false, committedLocal: false}
 						oldPrepares := newEntry.pre
 						oldPrepares = append(oldPrepares, &prepareMsg)
 						newEntry.pre = oldPrepares
