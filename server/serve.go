@@ -251,6 +251,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 	var logEntries []logEntry
 	msgLimit := 0
 	nodeID := int64(port) % 3001
+	timer := time.NewTimer(util.RandomDuration(r))
 	vcTimer := util.NewSecondsTimer(util.RandomDuration(r))
 	vcTimer.Stop()
 
@@ -259,6 +260,9 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 
 	for {
 		select {
+		case <-timer.C:
+			printMyStoreAndLog(logEntries, kvs, currentView, seqId)
+			util.RestartTimer(timer, r)
 		case inpChannel := <-s.C:
 			cr := inpChannel.clientRequest
 			if !viewChangePhase {
