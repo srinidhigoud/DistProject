@@ -85,7 +85,7 @@ func main() {
 	var pbftPort int
 	flag.IntVar(&pbftPort, "pbft", 3008,
 		"Port on which server should listen to Pbft requests")
-	flag.StringVar(&primary, "primary", "127.0.0.1:3001",
+	flag.StringVar(&primary, "primary", "127.0.0.1:3002",
 		"Pbft Primary call")
 	flag.Parse()
 
