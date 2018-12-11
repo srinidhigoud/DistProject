@@ -207,7 +207,7 @@ func RandStringRunes(n int64) string {
 }
 
 func tamper(digest string) string {
-	return RandStringRunes(len(digest))
+	return RandStringRunes(int64(len(digest)))
 }
 
 type ClientResponse struct {
