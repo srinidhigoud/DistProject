@@ -317,7 +317,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					viewChangeTimer.Reset(dur)
 				}
 				log.Printf("Received PrePrepareMsgChan %v from primary %v", pbftPrePrep.Arg, pbftPrePrep.Arg.Node)
-				printPrePrepareMsg(*prePrepareMsg, currentView, seqId)
+				// printPrePrepareMsg(*prePrepareMsg, currentView, seqId)
 				verified := verifyPrePrepare(prePrepareMsg, currentView, seqId, logEntries)
 				log.Printf("Done prepreparing")
 				if verified {
