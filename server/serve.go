@@ -337,6 +337,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							//time.Sleep(100 * time.Millisecond)
 							_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "ViewChange", Arg: &viewChange})
 						}(c, p)
+						log.Printf("Sending view change to %v", p)
 					}
 					viewChangePhase = false
 					currentView = newView
