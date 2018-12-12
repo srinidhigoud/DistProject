@@ -155,6 +155,7 @@ func isPrepared(entry logEntry, n int64) bool {
 			}
 		}
 		// return validPrepares >= reqValidPrepare(n)
+		log.Printf("Is prepared check number of valid prepares is %v", validPrepares)
 		return validPrepares >= 2
 	}
 	return false
