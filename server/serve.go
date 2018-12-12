@@ -288,6 +288,87 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 		case inputChan := <-pbft.PbftMsgChan:
 			msg := inputChan.Arg
 			switch opt := msg.GetOperation(); opt {
+
+			case "Redirect":
+				prePreMsg := msg.GetPpm()
+				cr := prePreMsg.Request
+				val, exists := evluated[cr.Timestamp]
+				_ = faulty.Bool
+				// checkfaulty := faulty.Bool()
+				checkfaulty := true
+				if !isByzantine {
+					checkfaulty = true
+				}
+				if checkfaulty {
+					if exists && val {
+						s.HandleCommand(cr, currentView, id, curreSeqID)
+					} else {
+						evluated[cr.Timestamp] = false
+						if !viewChangePhase {
+							if currentView == nodeID {
+								log.Printf("Received client request in view %v and seq %v from %v", currentView, curreSeqID, cr.ClientID)
+								curreSeqID += 1
+								digest := util.Digest(cr)
+								if isByzantine {
+									digest = tamper(digest)
+								}
+								prePreMsg := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
+								prePreMsg_temp := pb.Msg_Ppm{Ppm: &prePreMsg}
+								for p, c := range peerClients {
+									go func(c pb.PbftClient, p string) {
+										_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "PrePrepare", Arg: &prePreMsg_temp})
+
+									}(c, p)
+									log.Printf("Sending PrePrepare to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
+								}
+								newEntry := logEntry{viewId: currentView, sequenceID: curreSeqID, clientReq: cr, prePrep: &prePreMsg,
+									pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false,
+									committed: false, committedLocal: false}
+								if int64(len(logEntries)) >= curreSeqID+1 {
+									logEntries[curreSeqID] = newEntry
+								} else {
+									logEntries = append(logEntries, newEntry)
+								}
+
+							} else {
+								if vcTimer.TimeRemaining() < 100*time.Millisecond {
+									dur := util.RandomDuration(r)
+									log.Printf("Resetting timer for duration - %v", dur)
+									vcTimer.Reset(dur)
+								}
+								cr := logEntries[len(logEntries)-1].clientReq
+								ppm := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
+								ppm_temp := pb.Msg_Ppm{Ppm: &ppm}
+								pp := "127.0.0.1:" + strconv.FormatInt(currentView+3001, 10)
+								cc := peerClients[pp]
+								go func(c pb.PbftClient, p string) {
+									//time.Sleep(100 * time.Millisecond)
+									_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Redirect", Arg: &ppm_temp})
+
+								}(cc, pp)
+
+								// result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
+								// clientID := cr.ClientID
+								// client, err := util.ConnectToClient(clientID) //client connection
+								// if err != nil {
+								// 	log.Fatalf("Failed to connect to GRPC server %v", err)
+								// }
+								// log.Printf("Connected to %v", clientID)
+								// go func(c pb.PbftClient) {
+								// 	crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
+								// 	crp := pb.Msg_Crm{Crm: &crp_temp}
+								// 	c.SendPbftMsg(context.Background(),
+								// 		&pb.Msg{Operation: "Redirect", Arg: &crp})
+								// }(client)
+								log.Printf("Send Back Redirect message - Wrong primary, connected back to client %v", clientID)
+							}
+						} else {
+							log.Printf("Received ClientRequestChan %v", cr.ClientID)
+							log.Printf("But.....Requested View Change")
+						}
+					}
+				}
+
 			case "ViewChange":
 				vc := msg.GetVcm()
 				newView := vc.NewView
@@ -302,20 +383,31 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					curreSeqID = vc.LastSequenceID
 
 					if checkPrimary {
-						result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(newView+3005, 10)}}}
-						clientID := logEntries[len(logEntries)-1].clientReq.ClientID
-						client, err := util.ConnectToClient(clientID) //client connection
-						if err != nil {
-							log.Fatalf("Failed to connect to GRPC server %v", err)
-						}
-						log.Printf("Connected to %v", clientID)
-						go func(c pb.PbftClient) {
-							crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
-							crp := pb.Msg_Crm{Crm: &crp_temp}
+						cr := logEntries[len(logEntries)-1].clientReq
+						ppm := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
+						ppm_temp := pb.Msg_Ppm{Ppm: &ppm}
+						pp := "127.0.0.1:" + strconv.FormatInt(newView+3001, 10)
+						cc := peerClients[pp]
+						go func(c pb.PbftClient, p string) {
 							//time.Sleep(100 * time.Millisecond)
-							c.SendPbftMsg(context.Background(),
-								&pb.Msg{Operation: "Redirect", Arg: &crp})
-						}(client)
+							_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Redirect", Arg: &ppm_temp})
+
+						}(cc, pp)
+
+						// result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(newView+3005, 10)}}}
+						// clientID := logEntries[len(logEntries)-1].clientReq.ClientID
+						// client, err := util.ConnectToClient(clientID) //client connection
+						// if err != nil {
+						// 	log.Fatalf("Failed to connect to GRPC server %v", err)
+						// }
+						// log.Printf("Connected to %v", clientID)
+						// go func(c pb.PbftClient) {
+						// 	crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
+						// 	crp := pb.Msg_Crm{Crm: &crp_temp}
+						// 	//time.Sleep(100 * time.Millisecond)
+						// 	c.SendPbftMsg(context.Background(),
+						// 		&pb.Msg{Operation: "Redirect", Arg: &crp})
+						// }(client)
 						log.Printf("Send Back Redirect message - View Change")
 					}
 				} else {
@@ -587,19 +679,30 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								log.Printf("Resetting timer for duration - %v", dur)
 								vcTimer.Reset(dur)
 							}
-							result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
-							clientID := cr.ClientID
-							client, err := util.ConnectToClient(clientID) //client connection
-							if err != nil {
-								log.Fatalf("Failed to connect to GRPC server %v", err)
-							}
-							log.Printf("Connected to %v", clientID)
-							go func(c pb.PbftClient) {
-								crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
-								crp := pb.Msg_Crm{Crm: &crp_temp}
-								c.SendPbftMsg(context.Background(),
-									&pb.Msg{Operation: "Redirect", Arg: &crp})
-							}(client)
+							cr := logEntries[len(logEntries)-1].clientReq
+							ppm := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
+							ppm_temp := pb.Msg_Ppm{Ppm: &ppm}
+							pp := "127.0.0.1:" + strconv.FormatInt(currentView+3001, 10)
+							cc := peerClients[pp]
+							go func(c pb.PbftClient, p string) {
+								//time.Sleep(100 * time.Millisecond)
+								_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Redirect", Arg: &ppm_temp})
+
+							}(cc, pp)
+
+							// result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
+							// clientID := cr.ClientID
+							// client, err := util.ConnectToClient(clientID) //client connection
+							// if err != nil {
+							// 	log.Fatalf("Failed to connect to GRPC server %v", err)
+							// }
+							// log.Printf("Connected to %v", clientID)
+							// go func(c pb.PbftClient) {
+							// 	crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
+							// 	crp := pb.Msg_Crm{Crm: &crp_temp}
+							// 	c.SendPbftMsg(context.Background(),
+							// 		&pb.Msg{Operation: "Redirect", Arg: &crp})
+							// }(client)
 							log.Printf("Send Back Redirect message - Wrong primary, connected back to client %v", clientID)
 						}
 					} else {
