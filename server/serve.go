@@ -563,7 +563,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			cr := inpChannel.clientRequest
 			val, exists := evluated[cr.Timestamp]
 			if exists && val {
-				s.HandleCommand(crr, currentView, id, curreSeqID)
+				s.HandleCommand(cr, currentView, id, curreSeqID)
 			} else {
 				evluated[cr.Timestamp] = false
 				if !viewChangePhase {
