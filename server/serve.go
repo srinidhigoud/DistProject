@@ -242,7 +242,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 	msgLimit := 0
 	nodeID := int64(port) % 3001
 	timer := time.NewTimer(util.RandomDuration(r))
-	vcTimer := util.NewSecondsTimer(util.RandomDuration(r))
+	vcTimer := util.NewSecondsTimer(util.RandomDuration2(r))
 	vcTimer.Stop()
 
 	viewChangePhase := false
@@ -336,7 +336,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 
 							} else {
 								if vcTimer.TimeRemaining() < 100*time.Millisecond {
-									dur := util.RandomDuration(r)
+									dur := util.RandomDuration2(r)
 									log.Printf("Resetting timer for duration - %v", dur)
 									vcTimer.Reset(dur)
 								}
@@ -445,7 +445,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				curreSeqID = prePreMsg.SequenceID
 				if !viewChangePhase {
 					if vcTimer.TimeRemaining() < 100*time.Millisecond {
-						dur := util.RandomDuration(r)
+						dur := util.RandomDuration2(r)
 						log.Printf("Resetting timer for duration - %v", dur)
 						vcTimer.Reset(dur)
 					}
@@ -527,7 +527,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					verified := verifyPrepare(prepareMsg, currentView, curreSeqID, logEntries)
 					if verified {
 						if vcTimer.TimeRemaining() < 100*time.Millisecond {
-							dur := util.RandomDuration(r)
+							dur := util.RandomDuration2(r)
 							log.Printf("Resetting timer for duration - %v", dur)
 							vcTimer.Reset(dur)
 						}
@@ -587,7 +587,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					verified := verifyCommit(commitMsg, currentView, curreSeqID, logEntries)
 					if verified {
 						if vcTimer.TimeRemaining() < 100*time.Millisecond {
-							dur := util.RandomDuration(r)
+							dur := util.RandomDuration2(r)
 							log.Printf("Resetting timer for duration - %v", dur)
 							vcTimer.Reset(dur)
 						}
@@ -679,7 +679,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 
 						} else {
 							if vcTimer.TimeRemaining() < 100*time.Millisecond {
-								dur := util.RandomDuration(r)
+								dur := util.RandomDuration2(r)
 								log.Printf("Resetting timer for duration - %v", dur)
 								vcTimer.Reset(dur)
 							}

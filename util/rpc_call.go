@@ -85,6 +85,12 @@ func RandomDuration(r *rand.Rand) time.Duration {
 	return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 }
 
+func RandomDuration2(r *rand.Rand) time.Duration {
+	const DurationMax = 400
+	const DurationMin = 100
+	return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
+}
+
 func RestartTimer(timer *time.Timer, r *rand.Rand) {
 	stopped := timer.Stop()
 	if !stopped {
