@@ -105,7 +105,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not get hostname")
 	}
-	id := fmt.Sprintf("%s:%d", name, pbftPort)
+	id := fmt.Sprintf("%d", pbftPort)
 	log.Printf("Starting the client with ID %s", id)
 	log.Printf("Connecting to %v", primary)
 
