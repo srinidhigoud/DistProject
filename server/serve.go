@@ -425,10 +425,10 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							commitMsg := pb.CommitMsg{ViewId: prepareMsg.ViewId, SequenceID: prepareMsg.SequenceID, Digest: prepareMsg.Digest, Node: strconv.FormatInt(nodeID+3001, 10)}
 							commitMsg_temp := pb.Msg_Cm{Cm: &commitMsg}
 							for p, c := range peerClients {
-								go func(c pb.PbftClient, p string) {
-									// _, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Commit", Arg: &commitMsg_temp})
+								// go func(c pb.PbftClient, p string) {
+								// 	_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Commit", Arg: &commitMsg_temp})
 
-								}(c, p)
+								// }(c, p)
 								log.Printf("Sending Commit to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
 							}
 							oldEntry := logEntries[prepareMsg.SequenceID]
