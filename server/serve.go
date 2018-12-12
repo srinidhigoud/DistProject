@@ -263,40 +263,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 		case <-timer.C:
 			// printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 			util.RestartTimer(timer, r)
-		case inpChannel := <-s.C:
-			cr := inpChannel.clientRequest
-			if !viewChangePhase {
-				if currentView == nodeID {
-					log.Printf("Received ClientRequestChan %v", cr.ClientID)
-					printClientRequest(*cr, currentView, curreSeqID)
-					curreSeqID += 1
-					digest := util.Digest(cr)
-					if isByzantine {
-						digest = tamper(digest)
-					}
-					prePreMsg := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
-					for p, c := range peerClients {
-						go func(c pb.PbftClient, p string) {
-							_, _ = c.PrePreparePBFT(context.Background(), &prePreMsg)
-						}(c, p)
-					}
-					newEntry := logEntry{viewId: currentView, sequenceID: curreSeqID, clientReq: cr, prePrep: &prePreMsg,
-						pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false,
-						committed: false, committedLocal: false}
-					if int64(len(logEntries)) >= curreSeqID+1 {
-						logEntries[curreSeqID] = newEntry
-					} else {
-						logEntries = append(logEntries, newEntry)
-					}
-					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
-				} else {
-					// Need to send some kind of redirect message
-					log.Printf("Send Back Redirect message - View Change")
-				}
-			} else {
-				log.Printf("Received ClientRequestChan %v", cr.ClientID)
-				log.Printf("But.....Requested View Change")
-			}
+
 		case <-vcTimer.Timer.C:
 			newView := (currentView + 1) % numberOfPeers
 			log.Printf("Timeout - initiate view change. New view - %v", newView)
@@ -356,6 +323,40 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				currentView = newView
 				numberOfVotes = 0
 				curreSeqID = vc.Arg.LastSequenceID
+			}
+		case inpChannel := <-s.C:
+			cr := inpChannel.clientRequest
+			if !viewChangePhase {
+				if currentView == nodeID {
+					log.Printf("Received ClientRequestChan %v", cr.ClientID)
+					printClientRequest(*cr, currentView, curreSeqID)
+					curreSeqID += 1
+					digest := util.Digest(cr)
+					if isByzantine {
+						digest = tamper(digest)
+					}
+					prePreMsg := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
+					for p, c := range peerClients {
+						go func(c pb.PbftClient, p string) {
+							_, _ = c.PrePreparePBFT(context.Background(), &prePreMsg)
+						}(c, p)
+					}
+					newEntry := logEntry{viewId: currentView, sequenceID: curreSeqID, clientReq: cr, prePrep: &prePreMsg,
+						pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false,
+						committed: false, committedLocal: false}
+					if int64(len(logEntries)) >= curreSeqID+1 {
+						logEntries[curreSeqID] = newEntry
+					} else {
+						logEntries = append(logEntries, newEntry)
+					}
+					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
+				} else {
+					// Need to send some kind of redirect message
+					log.Printf("Send Back Redirect message - View Change")
+				}
+			} else {
+				log.Printf("Received ClientRequestChan %v", cr.ClientID)
+				log.Printf("But.....Requested View Change")
 			}
 
 		case pp := <-pbft.PrePrepareMsgChan:
