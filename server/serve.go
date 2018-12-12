@@ -472,6 +472,13 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								oldEntry.committedLocal = committedLocal
 							}
 							logEntries[commitMsg.SequenceID] = oldEntry
+							if committedLocal {
+								vcTimer.Stop()
+								// Execute and finally send back to client to aggregate
+								clr := oldEntry.clientReq
+								s.HandleCommand(clr, currentView, id, curreSeqID)
+
+							}
 						} else {
 							log.Printf("Have received commit before prepare - appending new entry to logs")
 							newEntry := logEntry{viewId: commitMsg.ViewId, sequenceID: commitMsg.SequenceID, pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false, committed: false, committedLocal: false}
@@ -481,13 +488,6 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							logEntries = append(logEntries, newEntry)
 						}
 
-						if committedLocal {
-							vcTimer.Stop()
-							// Execute and finally send back to client to aggregate
-							clr := oldEntry.clientReq
-							s.HandleCommand(clr, currentView, id, curreSeqID)
-
-						}
 					}
 					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 				} else {
