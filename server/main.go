@@ -31,6 +31,7 @@ func main() {
 	flag.IntVar(&pbftPort, "pbft", 3001,
 		"Port on which server should listen to Pbft requests")
 	flag.Var(&peers, "peer", "A peer for this process")
+	flag.BoolVar(&isByzantine, "byzantine", false, "Is a byzantine node?")
 	// flag.Var(&clients, "client", "A client for this process")
 	flag.Parse()
 	// clients.Set("127.0.0.1:3008")
@@ -64,7 +65,7 @@ func main() {
 
 	// Initialize KVStore
 	store := KVStore{C: make(chan InputChannelType), store: make(map[string]string)}
-	go serve(&store, r, &peers, id, pbftPort, false)
+	go serve(&store, r, &peers, id, pbftPort, isByzantine)
 
 	// Tell GRPC that s will be serving requests for the KvStore service and should use store (defined on line 23)
 	// as the struct whose methods should be called in Response.
