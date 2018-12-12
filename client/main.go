@@ -54,7 +54,7 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 		case inputChan := <-r.PbftMsgChan:
 			msg := inputChan.Arg
 			op := msg.Operation
-			res := msg.Arg
+			res := msg.GetCrm()
 			log.Printf("got a response")
 			if res.SequenceID < 0 || op == "Redirect" {
 
