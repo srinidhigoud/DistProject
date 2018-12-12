@@ -109,7 +109,7 @@ func main() {
 	// 	log.Fatalf("Could not get hostname")
 	// }
 	id := fmt.Sprintf("%d", pbftPort)
-	id = "127.0.0.1:" + id
+	// id = "127.0.0.1:" + id
 	log.Printf("Starting the client with ID %s", id)
 	log.Printf("Connecting to %v", primary)
 
