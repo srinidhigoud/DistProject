@@ -136,6 +136,10 @@ func verifyCommit(commitMsg *pb.CommitMsg, viewId int64, sequenceID int64, logEn
 			return false
 		}
 	}
+	if CommitMsg.SequenceID+1 > int64(len(logEntries)) {
+		return false
+	}
+
 	log.Printf("The log size is %v, the seq id is %v", len(logEntries), commitMsg.SequenceID)
 	digest := logEntries[commitMsg.SequenceID].prePrep.Digest
 	if digest != commitMsg.Digest {
