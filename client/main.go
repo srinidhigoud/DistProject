@@ -118,7 +118,7 @@ func main() {
 	log.Printf("Connected")
 	// Create a KvStore client
 	kvc := pb.NewKvStoreClient(conn)
-	port := 3008
+	port := 3009
 	res := &pb.Result{}
 	newprimary := ""
 	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput)}
