@@ -238,7 +238,7 @@ type ClientResponse struct {
 //func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int) {
 func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int, isByzantine bool) {
 	log.Printf("The byzantine condition is %v", isByzantine)
-	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput)}
+	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput, 20)}
 	go util.RunPbftServer(&pbft, port)
 	peerClients := make(map[string]pb.PbftClient)
 	numberOfPeers := int64(1)

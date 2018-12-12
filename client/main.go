@@ -141,7 +141,7 @@ func main() {
 	// port := 3000
 	res := &pb.Result{}
 	newprimary := ""
-	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput)}
+	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput, 20)}
 	go util.RunPbftServer(&pbft, pbftPort)
 	//&pb.ClientRequest{cmd: ,timestamp: time_now,clientID: id}
 	// Clear KVC
