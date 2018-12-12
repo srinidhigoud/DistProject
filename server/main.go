@@ -36,7 +36,9 @@ func main() {
 	// flag.Var(&clients, "client", "A client for this process")
 	flag.Parse()
 	// clients.Set("127.0.0.1:3008")
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	// Initialize the random number generator
+
 	if seed < 0 {
 		r = rand.New(rand.NewSource(time.Now().UnixNano()))
 	} else {
