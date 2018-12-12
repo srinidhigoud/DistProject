@@ -4,10 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	rand "math/rand"
 	"os"
 	"time"
 
 	context "golang.org/x/net/context"
+
 	// "google.golang.org/grpc"
 
 	"github.com/nyu-distributed-systems-fa18/DistProject/pb"
@@ -46,13 +48,26 @@ func compare(v1 Validation, v2 Validation) bool {
 }
 
 func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft) (*pb.Result, error, string) {
+	var rd *rand.Rand
+	rd = rand.New(rand.NewSource(time.Now().UnixNano()))
 	numberOfValidResponses := int64(0)
 	val := pb.Result{}
-
+	clientTimer := util.NewSecondsTimer(util.RandomDuration(rd))
+	// clientTimer.Stop()
 	for numberOfValidResponses < 2 { //lot of changes required for a better performance
 		log.Printf("waiting for a response")
 		select {
+		case <-clientTimer.Timer.C:
+			primary := "Broadcast"
+			log.Printf("Broadcasting now to all", primary)
+			clientTimer.Stop()
+			return &val, nil, primary
 		case inputChan := <-r.PbftMsgChan:
+			if clientTimer.TimeRemaining() < 10*time.Millisecond {
+				dur := util.RandomDuration(rd)
+				log.Printf("Resetting timer for duration - %v", dur)
+				clientTimer.Reset(dur)
+			}
 			msg := inputChan.Arg
 			op := msg.Operation
 			res := msg.GetCrm()
@@ -61,6 +76,7 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 
 				primary := res.NodeResult.GetRedirect().GetServer()
 				log.Printf("redirect now to %v", primary)
+				clientTimer.Stop()
 				return &val, nil, primary
 			} else if v := mapS[res.SequenceID]; v < 2 {
 				log.Printf("got in") //res.NodeResult.GetKv().Key
@@ -85,6 +101,7 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 			// 	continue
 		}
 	}
+	clientTimer.Stop()
 	return &val, nil, ""
 }
 
@@ -136,7 +153,7 @@ func main() {
 	c := pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for clearing")
-
+	redirected := false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
 		if err != nil {
@@ -144,7 +161,41 @@ func main() {
 			break
 		} else if newprimary == "" {
 			break
-		} else {
+		} else if newprimary == "Broadcast" {
+			conn, err = grpc.Dial("127.0.0.1:3005", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for clearing")
+			conn, err = grpc.Dial("127.0.0.1:3006", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for clearing")
+			conn, err = grpc.Dial("127.0.0.1:3007", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for clearing")
+			conn, err = grpc.Dial("127.0.0.1:3008", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for clearing")
+		} else if !redirected {
+			redirected := true
 			conn, err = grpc.Dial("127.0.0.1:"+newprimary, grpc.WithInsecure())
 			if err != nil {
 				log.Fatalf("Failed to dial GRPC server %v", err)
@@ -153,6 +204,8 @@ func main() {
 			kvc = pb.NewKvStoreClient(conn)
 			kvc.Call(context.Background(), &c)
 			log.Printf("Waiting for clearing")
+		} else {
+			break
 		}
 	}
 
@@ -165,6 +218,7 @@ func main() {
 	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for putting")
+	redirected = false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
 		if err != nil {
@@ -172,15 +226,51 @@ func main() {
 			break
 		} else if newprimary == "" {
 			break
-		} else {
-			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+		} else if newprimary == "Broadcast" {
+			conn, err = grpc.Dial("127.0.0.1:3005", grpc.WithInsecure())
 			if err != nil {
 				log.Fatalf("Failed to dial GRPC server %v", err)
 			}
 			log.Printf("Connected")
 			kvc = pb.NewKvStoreClient(conn)
 			kvc.Call(context.Background(), &c)
-			log.Printf("Waiting for clearing")
+			log.Printf("Waiting for putting")
+			conn, err = grpc.Dial("127.0.0.1:3006", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for putting")
+			conn, err = grpc.Dial("127.0.0.1:3007", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for putting")
+			conn, err = grpc.Dial("127.0.0.1:3008", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for putting")
+		} else if !redirected {
+			redirected := true
+			conn, err = grpc.Dial("127.0.0.1:"+newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for putting")
+		} else {
+			break
 		}
 	}
 	log.Printf("Done putting")
@@ -196,6 +286,7 @@ func main() {
 	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for getting")
+	redirected = false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
 		if err != nil {
@@ -203,15 +294,51 @@ func main() {
 			break
 		} else if newprimary == "" {
 			break
-		} else {
-			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+		} else if newprimary == "Broadcast" {
+			conn, err = grpc.Dial("127.0.0.1:3005", grpc.WithInsecure())
 			if err != nil {
 				log.Fatalf("Failed to dial GRPC server %v", err)
 			}
 			log.Printf("Connected")
 			kvc = pb.NewKvStoreClient(conn)
 			kvc.Call(context.Background(), &c)
-			log.Printf("Waiting for clearing")
+			log.Printf("Waiting for getting")
+			conn, err = grpc.Dial("127.0.0.1:3006", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for getting")
+			conn, err = grpc.Dial("127.0.0.1:3007", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for getting")
+			conn, err = grpc.Dial("127.0.0.1:3008", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for getting")
+		} else if !redirected {
+			redirected := true
+			conn, err = grpc.Dial("127.0.0.1:"+newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for getting")
+		} else {
+			break
 		}
 	}
 	log.Printf("Done getting")
@@ -227,6 +354,7 @@ func main() {
 	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for CASing")
+	redirected = false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
 		if err != nil {
@@ -234,15 +362,51 @@ func main() {
 			break
 		} else if newprimary == "" {
 			break
-		} else {
-			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+		} else if newprimary == "Broadcast" {
+			conn, err = grpc.Dial("127.0.0.1:3005", grpc.WithInsecure())
 			if err != nil {
 				log.Fatalf("Failed to dial GRPC server %v", err)
 			}
 			log.Printf("Connected")
 			kvc = pb.NewKvStoreClient(conn)
 			kvc.Call(context.Background(), &c)
-			log.Printf("Waiting for clearing")
+			log.Printf("Waiting for casing")
+			conn, err = grpc.Dial("127.0.0.1:3006", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+			conn, err = grpc.Dial("127.0.0.1:3007", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+			conn, err = grpc.Dial("127.0.0.1:3008", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+		} else if !redirected {
+			redirected := true
+			conn, err = grpc.Dial("127.0.0.1:"+newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+		} else {
+			break
 		}
 	}
 	log.Printf("Done CASing")
@@ -258,6 +422,7 @@ func main() {
 	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for CASing")
+	redirected = false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
 		if err != nil {
@@ -265,15 +430,51 @@ func main() {
 			break
 		} else if newprimary == "" {
 			break
-		} else {
-			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+		} else if newprimary == "Broadcast" {
+			conn, err = grpc.Dial("127.0.0.1:3005", grpc.WithInsecure())
 			if err != nil {
 				log.Fatalf("Failed to dial GRPC server %v", err)
 			}
 			log.Printf("Connected")
 			kvc = pb.NewKvStoreClient(conn)
 			kvc.Call(context.Background(), &c)
-			log.Printf("Waiting for clearing")
+			log.Printf("Waiting for casing")
+			conn, err = grpc.Dial("127.0.0.1:3006", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+			conn, err = grpc.Dial("127.0.0.1:3007", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+			conn, err = grpc.Dial("127.0.0.1:3008", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+		} else if !redirected {
+			redirected := true
+			conn, err = grpc.Dial("127.0.0.1:"+newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+		} else {
+			break
 		}
 	}
 	log.Printf("Done CASing")
@@ -289,6 +490,7 @@ func main() {
 	c = pb.ClientRequest{Cmd: &r, Timestamp: time_now, ClientID: id}
 	kvc.Call(context.Background(), &c)
 	log.Printf("Waiting for CASing")
+	redirected = false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
 		if err != nil {
@@ -296,15 +498,51 @@ func main() {
 			break
 		} else if newprimary == "" {
 			break
-		} else {
-			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+		} else if newprimary == "Broadcast" {
+			conn, err = grpc.Dial("127.0.0.1:3005", grpc.WithInsecure())
 			if err != nil {
 				log.Fatalf("Failed to dial GRPC server %v", err)
 			}
 			log.Printf("Connected")
 			kvc = pb.NewKvStoreClient(conn)
 			kvc.Call(context.Background(), &c)
-			log.Printf("Waiting for clearing")
+			log.Printf("Waiting for casing")
+			conn, err = grpc.Dial("127.0.0.1:3006", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+			conn, err = grpc.Dial("127.0.0.1:3007", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+			conn, err = grpc.Dial("127.0.0.1:3008", grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+		} else if !redirected {
+			redirected := true
+			conn, err = grpc.Dial("127.0.0.1:"+newprimary, grpc.WithInsecure())
+			if err != nil {
+				log.Fatalf("Failed to dial GRPC server %v", err)
+			}
+			log.Printf("Connected")
+			kvc = pb.NewKvStoreClient(conn)
+			kvc.Call(context.Background(), &c)
+			log.Printf("Waiting for casing")
+		} else {
+			break
 		}
 	}
 	log.Printf("Done CASing")
