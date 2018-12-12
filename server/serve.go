@@ -314,7 +314,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					if iWasLeader {
 						result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(newView+3005, 10)}}}
 						clientID := logEntries[len(logEntries)-1].clientReq.ClientID
-						client, err := util.ConnectToClient(strconv.Atoi(clientID)) //client connection
+						client, err := util.ConnectToClient(clientID) //client connection
 						if err != nil {
 							log.Fatalf("Failed to connect to GRPC server %v", err)
 						}
@@ -547,7 +547,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				} else {
 					result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
 					clientID := logEntries[len(logEntries)-1].clientReq.ClientID
-					client, err := util.ConnectToClient(strconv.Atoi(clientID)) //client connection
+					client, err := util.ConnectToClient(clientID) //client connection
 					if err != nil {
 						log.Fatalf("Failed to connect to GRPC server %v", err)
 					}
