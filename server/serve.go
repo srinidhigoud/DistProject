@@ -136,7 +136,7 @@ func verifyCommit(commitMsg *pb.CommitMsg, viewId int64, sequenceID int64, logEn
 			return false
 		}
 	}
-	if CommitMsg.SequenceID+1 > int64(len(logEntries)) {
+	if commitMsg.SequenceID+1 > int64(len(logEntries)) {
 		return false
 	}
 
