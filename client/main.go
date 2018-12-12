@@ -48,11 +48,11 @@ func compare(v1 Validation, v2 Validation) bool {
 }
 
 func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft) (*pb.Result, error, string) {
-	var r *rand.Rand
-	r = rand.New(rand.NewSource(time.Now().UnixNano()))
+	var rd *rand.Rand
+	rd = rand.New(rand.NewSource(time.Now().UnixNano()))
 	numberOfValidResponses := int64(0)
 	val := pb.Result{}
-	clientTimer := util.NewSecondsTimer(util.RandomDuration(r))
+	clientTimer := util.NewSecondsTimer(util.RandomDuration(rd))
 	// clientTimer.Stop()
 	for numberOfValidResponses < 2 { //lot of changes required for a better performance
 		log.Printf("waiting for a response")
@@ -64,7 +64,7 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 			return &val, nil, primary
 		case inputChan := <-r.PbftMsgChan:
 			if clientTimer.TimeRemaining() < 10*time.Millisecond {
-				dur := util.RandomDuration(r)
+				dur := util.RandomDuration(rd)
 				log.Printf("Resetting timer for duration - %v", dur)
 				clientTimer.Reset(dur)
 			}
