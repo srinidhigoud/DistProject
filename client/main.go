@@ -270,6 +270,7 @@ func main() {
 			kvc.Call(context.Background(), &c)
 			log.Printf("Waiting for putting")
 		} else {
+			log.Printf("Breaking")
 			break
 		}
 	}
