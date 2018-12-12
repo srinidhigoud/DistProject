@@ -336,8 +336,8 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 									log.Printf("Resetting timer for duration - %v", dur)
 									vcTimer.Reset(dur)
 								}
-								cr := logEntries[len(logEntries)-1].clientReq
-								ppm := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
+								creq := logEntries[len(logEntries)-1].clientReq
+								ppm := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: creq, Node: id}
 								ppm_temp := pb.Msg_Ppm{Ppm: &ppm}
 								pp := "127.0.0.1:" + strconv.FormatInt(currentView+3001, 10)
 								cc := peerClients[pp]
@@ -348,7 +348,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								}(cc, pp)
 
 								// result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
-								// clientID := cr.ClientID
+								clientID := cr.ClientID
 								// client, err := util.ConnectToClient(clientID) //client connection
 								// if err != nil {
 								// 	log.Fatalf("Failed to connect to GRPC server %v", err)
@@ -360,7 +360,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								// 	c.SendPbftMsg(context.Background(),
 								// 		&pb.Msg{Operation: "Redirect", Arg: &crp})
 								// }(client)
-								log.Printf("Send Back Redirect message - Wrong primary, connected back to client %v", clientID)
+								log.Printf("Send Back Redirect message - Wrong primary, connected back to primary %v", pp)
 							}
 						} else {
 							log.Printf("Received ClientRequestChan %v", cr.ClientID)
@@ -383,8 +383,8 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					curreSeqID = vc.LastSequenceID
 
 					if checkPrimary {
-						cr := logEntries[len(logEntries)-1].clientReq
-						ppm := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
+						creq := logEntries[len(logEntries)-1].clientReq
+						ppm := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: util.Digest(creq), Request: creq, Node: id}
 						ppm_temp := pb.Msg_Ppm{Ppm: &ppm}
 						pp := "127.0.0.1:" + strconv.FormatInt(newView+3001, 10)
 						cc := peerClients[pp]
@@ -679,8 +679,8 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								log.Printf("Resetting timer for duration - %v", dur)
 								vcTimer.Reset(dur)
 							}
-							cr := logEntries[len(logEntries)-1].clientReq
-							ppm := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
+							creq := logEntries[len(logEntries)-1].clientReq
+							ppm := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: util.Digest(creq), Request: creq, Node: id}
 							ppm_temp := pb.Msg_Ppm{Ppm: &ppm}
 							pp := "127.0.0.1:" + strconv.FormatInt(currentView+3001, 10)
 							cc := peerClients[pp]
@@ -703,7 +703,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							// 	c.SendPbftMsg(context.Background(),
 							// 		&pb.Msg{Operation: "Redirect", Arg: &crp})
 							// }(client)
-							log.Printf("Send Back Redirect message - Wrong primary, connected back to client %v", clientID)
+							log.Printf("Send Back Redirect message - Wrong primary, connected back to primary %v", pp)
 						}
 					} else {
 						log.Printf("Received ClientRequestChan %v", cr.ClientID)
