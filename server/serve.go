@@ -550,6 +550,13 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							logEntries = append(logEntries, newEntry)
 						}
 
+					} else {
+						log.Printf("Have received commit before prepare - appending new entry to logs")
+						newEntry := logEntry{viewId: commitMsg.ViewId, sequenceID: commitMsg.SequenceID, pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false, committed: false, committedLocal: false}
+						oldCommits := newEntry.com
+						oldCommits = append(oldCommits, commitMsg)
+						newEntry.com = oldCommits
+						logEntries = append(logEntries, newEntry)
 					}
 					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 				} else {
