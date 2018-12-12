@@ -154,7 +154,8 @@ func isPrepared(entry logEntry, n int64) bool {
 				validPrepares += 1
 			}
 		}
-		return validPrepares >= reqValidPrepare(n)
+		// return validPrepares >= reqValidPrepare(n)
+		return validPrepares >= 2
 	}
 	return false
 }
@@ -170,6 +171,7 @@ func isCommitted(entry logEntry, n int64) bool {
 				validCommits += 1
 			}
 		}
+		// return validCommits >= reqValidCommit(n)
 		return validCommits >= reqValidCommit(n)
 	}
 	return false
