@@ -80,8 +80,8 @@ func (r *Pbft) SendPbftMsg(ctx context.Context, arg *pb.Msg) (*pb.Success, error
 // }
 
 func RandomDuration(r *rand.Rand) time.Duration {
-	const DurationMax = 4000
-	const DurationMin = 1000
+	const DurationMax = 40000
+	const DurationMin = 10000
 	return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 }
 
