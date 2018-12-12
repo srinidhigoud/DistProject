@@ -205,6 +205,7 @@ func main() {
 			kvc.Call(context.Background(), &c)
 			log.Printf("Waiting for clearing")
 		} else {
+			log.Printf("Breaking")
 			break
 		}
 	}
@@ -340,6 +341,7 @@ func main() {
 			kvc.Call(context.Background(), &c)
 			log.Printf("Waiting for getting")
 		} else {
+			log.Printf("Breaking")
 			break
 		}
 	}
@@ -408,6 +410,7 @@ func main() {
 			kvc.Call(context.Background(), &c)
 			log.Printf("Waiting for casing")
 		} else {
+			log.Printf("Breaking")
 			break
 		}
 	}
@@ -476,6 +479,7 @@ func main() {
 			kvc.Call(context.Background(), &c)
 			log.Printf("Waiting for casing")
 		} else {
+			log.Printf("Breaking")
 			break
 		}
 	}
@@ -544,6 +548,7 @@ func main() {
 			kvc.Call(context.Background(), &c)
 			log.Printf("Waiting for casing")
 		} else {
+			log.Printf("Breaking")
 			break
 		}
 	}
