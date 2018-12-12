@@ -426,7 +426,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							commitMsg_temp := pb.Msg_Cm{Cm: &commitMsg}
 							for p, c := range peerClients {
 								go func(c pb.PbftClient, p string) {
-									_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Commit", Arg: &commitMsg_temp})
+									// _, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Commit", Arg: &commitMsg_temp})
 
 								}(c, p)
 								log.Printf("Sending Commit to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
@@ -520,7 +520,6 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				log.Printf("Received ClientRequestChan %v", cr.ClientID)
 				log.Printf("But.....Requested View Change")
 			}
-
 		}
 	}
 	log.Printf("Strange to arrive here2")
