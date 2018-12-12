@@ -95,6 +95,8 @@ func main() {
 	var pbftPort int
 	flag.IntVar(&pbftPort, "pbft", 3000,
 		"Port on which server should listen to Pbft requests")
+	flag.IntVar(&port, "port", 3009,
+		"Port on which server should listen to grpc requests")
 	flag.StringVar(&primary, "primary", "127.0.0.1:3005",
 		"Pbft Primary call")
 	flag.Parse()
@@ -105,7 +107,7 @@ func main() {
 	// if err != nil {
 	// 	log.Fatalf("Could not get hostname")
 	// }
-	id := fmt.Sprintf("%d", pbftPort)
+	id := fmt.Sprintf("%d", port)
 	id = "127.0.0.1:" + id
 	log.Printf("Starting the client with ID %s", id)
 	log.Printf("Connecting to %v", primary)
@@ -119,7 +121,6 @@ func main() {
 	log.Printf("Connected")
 	// Create a KvStore client
 	kvc := pb.NewKvStoreClient(conn)
-	port := 3009
 	res := &pb.Result{}
 	newprimary := ""
 	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput)}
