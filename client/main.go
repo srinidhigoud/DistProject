@@ -93,9 +93,9 @@ func main() {
 	mappedVal := make(map[int64]Validation)
 	var primary string
 	var pbftPort int
-	flag.IntVar(&pbftPort, "pbft", 3000,
+	flag.IntVar(&pbftPort, "pbft", 3008,
 		"Port on which server should listen to Pbft requests")
-	flag.StringVar(&primary, "primary", "127.0.0.1:3005",
+	flag.StringVar(&primary, "primary", "127.0.0.1:3000",
 		"Pbft Primary call")
 	flag.Parse()
 
@@ -118,7 +118,7 @@ func main() {
 	log.Printf("Connected")
 	// Create a KvStore client
 	kvc := pb.NewKvStoreClient(conn)
-	port := 3009
+	port := 3008
 	res := &pb.Result{}
 	newprimary := ""
 	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput)}
