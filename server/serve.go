@@ -154,9 +154,8 @@ func isPrepared(entry logEntry, n int64) bool {
 				validPrepares += 1
 			}
 		}
-		// return validPrepares >= reqValidPrepare(n)
 		log.Printf("Is prepared check number of valid prepares is %v, len of entry:pre is %v", validPrepares, entry.pre)
-		return validPrepares >= 2
+		return validPrepares == reqValidPrepare(n)
 	}
 	return false
 }
@@ -174,7 +173,7 @@ func isCommitted(entry logEntry, n int64) bool {
 			}
 		}
 		// return validCommits >= reqValidCommit(n)
-		return validCommits >= reqValidCommit(n)
+		return validCommits == reqValidCommit(n)
 	}
 	return false
 }
@@ -190,7 +189,8 @@ func isCommittedLocal(entry logEntry, n int64) bool {
 				validCommits += 1
 			}
 		}
-		return validCommits >= reqValidCommitLocal(n)
+		// return validCommits >= reqValidCommitLocal(n)
+		return validCommits == reqValidCommitLocal(n)
 	}
 	return false
 }
@@ -320,7 +320,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					}
 				}
 				// New Primary
-				if numberOfVotes >= reqValidVC(numberOfPeers) {
+				if numberOfVotes == reqValidVC(numberOfPeers) {
 					vcTimer.Stop()
 					log.Printf("Switching to new view - %v and taking on as primary", newView)
 					viewChange_temp := pb.ViewChangeMsg{Type: "new-view", NewView: newView, LastSequenceID: curreSeqID - 1, Node: strconv.FormatInt(nodeID+3001, 10)}
@@ -423,13 +423,13 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								digest = tamper(digest)
 							}
 							commitMsg := pb.CommitMsg{ViewId: prepareMsg.ViewId, SequenceID: prepareMsg.SequenceID, Digest: prepareMsg.Digest, Node: strconv.FormatInt(nodeID+3001, 10)}
-							// commitMsg_temp := pb.Msg_Cm{Cm: &commitMsg}
+							commitMsg_temp := pb.Msg_Cm{Cm: &commitMsg}
 							for p, c := range peerClients {
-								// go func(c pb.PbftClient, p string) {
-								// 	_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Commit", Arg: &commitMsg_temp})
+								go func(c pb.PbftClient, p string) {
+									_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Commit", Arg: &commitMsg_temp})
 
-								// }(c, p)
-								log.Printf("Sending Commit to %v for current view %v, sequenceID %v -- %v", p, currentView, curreSeqID, c)
+								}(c, p)
+								log.Printf("Sending Commit to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
 							}
 							oldEntry := logEntries[prepareMsg.SequenceID]
 							oldCommits := oldEntry.com
