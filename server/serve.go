@@ -370,6 +370,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						for p, c := range peerClients {
 							go func(c pb.PbftClient, p string) {
 								_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Prepare", Arg: &prepareMsg_temp})
+								log.Printf("Sending Prepare to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
 							}(c, p)
 						}
 					}
@@ -420,6 +421,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							for p, c := range peerClients {
 								go func(c pb.PbftClient, p string) {
 									_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Commit", Arg: &commitMsg_temp})
+									log.Printf("Sending Commit to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
 								}(c, p)
 							}
 							oldEntry := logEntries[prepareMsg.SequenceID]
@@ -461,6 +463,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							// Execute and finally send back to client to aggregate
 							clr := oldEntry.clientReq
 							s.HandleCommand(clr, currentView, id, curreSeqID)
+
 						}
 					}
 					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
@@ -489,6 +492,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					for p, c := range peerClients {
 						go func(c pb.PbftClient, p string) {
 							_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "PrePrepare", Arg: &prePreMsg_temp})
+							log.Printf("Sending PrePrepare to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
 						}(c, p)
 					}
 					newEntry := logEntry{viewId: currentView, sequenceID: curreSeqID, clientReq: cr, prePrep: &prePreMsg,
