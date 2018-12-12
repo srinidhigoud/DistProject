@@ -561,7 +561,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 
 		case inpChannel := <-s.C:
 			cr := inpChannel.clientRequest
-			val, exists := evluated[cr.Timestamp]{
+			val, exists := evluated[cr.Timestamp]
 			if exists && val {
 				s.HandleCommand(crr, currentView, id, curreSeqID)
 			} else {
@@ -580,7 +580,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						for p, c := range peerClients {
 							go func(c pb.PbftClient, p string) {
 								_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "PrePrepare", Arg: &prePreMsg_temp})
-	
+
 							}(c, p)
 							log.Printf("Sending PrePrepare to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
 						}
@@ -619,7 +619,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					log.Printf("But.....Requested View Change")
 				}
 			}
-			
+
 		}
 	}
 	log.Printf("Strange to arrive here2")
