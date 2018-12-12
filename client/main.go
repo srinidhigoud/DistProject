@@ -93,6 +93,7 @@ func main() {
 	mappedVal := make(map[int64]Validation)
 	var primary string
 	var pbftPort int
+	var port int
 	flag.IntVar(&pbftPort, "pbft", 3000,
 		"Port on which server should listen to Pbft requests")
 	flag.IntVar(&port, "port", 3009,
