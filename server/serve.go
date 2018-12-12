@@ -271,17 +271,17 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 		select {
 		case <-timer.C:
 			// printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
-			// if curreSeqID != -1 && (curreSeqID+1 <= int64(len(logEntries))) {
-			// 	oldEntry := logEntries[curreSeqID]
-			// 	if !(oldEntry.committedLocal) {
-			// 		if isCommittedLocal(oldEntry, numberOfPeers) {
-			// 			log.Printf("Deadlock case check")
-			// 			oldEntry.committedLocal = true
-			// 			clr := oldEntry.clientReq
-			// 			s.HandleCommand(clr, currentView, id, curreSeqID)
-			// 		}
-			// 	}
-			// }
+			if curreSeqID != -1 && (curreSeqID+1 <= int64(len(logEntries))) {
+				oldEntry := logEntries[curreSeqID]
+				if !(oldEntry.committedLocal) {
+					if isCommittedLocal(oldEntry, numberOfPeers) {
+						log.Printf("Deadlock case check")
+						oldEntry.committedLocal = true
+						clr := oldEntry.clientReq
+						s.HandleCommand(clr, currentView, id, curreSeqID)
+					}
+				}
+			}
 			util.RestartTimer(timer, r)
 
 		case <-vcTimer.Timer.C:
@@ -389,6 +389,36 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							oldPrepares = append(oldPrepares, &prepareMsg)
 							newEntry.pre = oldPrepares
 							logEntries = append(logEntries, newEntry)
+
+							//////fancy////////////////////////
+							prepared := false
+							oldEntryC := logEntries[prePreMsg.SequenceID]
+							if !(oldEntryC.prepared) {
+								prepared = isPrepared(oldEntry, numberOfPeers)
+								oldEntry.prepared = prepared
+							}
+							if prepared {
+								log.Printf("It is already prepared")
+								digest := prepareMsg.Digest
+								if isByzantine {
+									digest = tamper(digest)
+								}
+								commitMsg := pb.CommitMsg{ViewId: prePreMsg.ViewId, SequenceID: prePreMsg.SequenceID, Digest: prePreMsg.Digest, Node: strconv.FormatInt(nodeID+3001, 10)}
+								commitMsg_temp := pb.Msg_Cm{Cm: &commitMsg}
+								for p, c := range peerClients {
+									go func(c pb.PbftClient, p string) {
+										//time.Sleep(100 * time.Millisecond)
+										_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Commit", Arg: &commitMsg_temp})
+
+									}(c, p)
+									log.Printf("Sending Commit to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
+								}
+								oldEntry := logEntries[prePreMsg.SequenceID]
+								oldCommits := oldEntry.com
+								oldCommits = append(oldCommits, &commitMsg)
+								oldEntry.com = oldCommits
+								logEntries[prePreMsg.SequenceID] = oldEntry
+							}
 						}
 						prepareMsg_temp := pb.Msg_Pm{Pm: &prepareMsg}
 						for p, c := range peerClients {
