@@ -491,6 +491,8 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							if !(oldEntry.committedLocal) {
 								committedLocal = isCommittedLocal(oldEntry, numberOfPeers)
 								oldEntry.committedLocal = committedLocal
+							} else {
+								vcTimer.Stop()
 							}
 							logEntries[commitMsg.SequenceID] = oldEntry
 							if committedLocal {
