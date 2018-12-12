@@ -312,7 +312,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					curreSeqID = vc.LastSequenceID
 
 					if iWasLeader {
-						result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(newView+3001, 10)}}}
+						result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(newView+3005, 10)}}}
 						clientID := logEntries[len(logEntries)-1].clientReq.ClientID
 						client, err := util.ConnectToClient(clientID) //client connection
 						if err != nil {
@@ -545,7 +545,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					}
 					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 				} else {
-					result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3001, 10)}}}
+					result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
 					clientID := logEntries[len(logEntries)-1].clientReq.ClientID
 					client, err := util.ConnectToClient(clientID) //client connection
 					if err != nil {

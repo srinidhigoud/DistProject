@@ -93,9 +93,9 @@ func main() {
 	mappedVal := make(map[int64]Validation)
 	var primary string
 	var pbftPort int
-	flag.IntVar(&pbftPort, "pbft", 3008,
+	flag.IntVar(&pbftPort, "pbft", 3000,
 		"Port on which server should listen to Pbft requests")
-	flag.StringVar(&primary, "primary", "127.0.0.1:3000",
+	flag.StringVar(&primary, "primary", "127.0.0.1:3005",
 		"Pbft Primary call")
 	flag.Parse()
 
@@ -142,7 +142,7 @@ func main() {
 		} else if newprimary == "" {
 			break
 		} else {
-			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+			conn, err = grpc.Dial("127.0.0.1:"+newprimary, grpc.WithInsecure())
 			if err != nil {
 				log.Fatalf("Failed to dial GRPC server %v", err)
 			}
