@@ -118,11 +118,11 @@ func main() {
 	log.Printf("Connected")
 	// Create a KvStore client
 	kvc := pb.NewKvStoreClient(conn)
-	port := 3000
+	// port := 3000
 	res := &pb.Result{}
 	newprimary := ""
 	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput)}
-	go util.RunPbftServer(&pbft, port)
+	go util.RunPbftServer(&pbft, pbftPort)
 	//&pb.ClientRequest{cmd: ,timestamp: time_now,clientID: id}
 	// Clear KVC
 
