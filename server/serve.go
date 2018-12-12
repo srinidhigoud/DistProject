@@ -543,7 +543,9 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 		case inpChannel := <-s.C:
 			cr := inpChannel.clientRequest
 			val, exists := evluated[cr.Timestamp]
-			if faulty.Bool() {
+			checkfaulty := faulty.Bool()
+			if(!isByzantine) checkfaulty = true
+			if checkfaulty {
 				if exists && val {
 					s.HandleCommand(cr, currentView, id, curreSeqID)
 				} else {
