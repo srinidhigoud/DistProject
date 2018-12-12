@@ -558,7 +558,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						c.SendPbftMsg(context.Background(),
 							&pb.Msg{Operation: "Redirect", Arg: &crp})
 					}(client)
-					log.Printf("Send Back Redirect message - Wrong primary")
+					log.Printf("Send Back Redirect message - Wrong primary, connected back to client %v", clientID)
 				}
 			} else {
 				log.Printf("Received ClientRequestChan %v", cr.ClientID)
