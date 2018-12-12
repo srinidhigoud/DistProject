@@ -491,6 +491,13 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							oldEntry.com = oldCommits
 							logEntries[prepareMsg.SequenceID] = oldEntry
 						}
+					} else {
+						log.Printf("Have received prepare before pre-prepare - appending new entry to logs")
+						newEntry := logEntry{viewId: prepareMsg.ViewId, sequenceID: prepareMsg.SequenceID, pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false, committed: false, committedLocal: false}
+						oldPrepares := newEntry.pre
+						oldPrepares = append(oldPrepares, prepareMsg)
+						newEntry.pre = oldPrepares
+						logEntries = append(logEntries, newEntry)
 					}
 				} else {
 					log.Printf("Received PrepareMsgChan %v", prepareMsg)
