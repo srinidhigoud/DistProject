@@ -144,7 +144,7 @@ func main() {
 		} else if newprimary == "" {
 			break
 		} else {
-			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
+			conn, err = grpc.Dial("127.0.0.1:"+newprimary, grpc.WithInsecure())
 			if err != nil {
 				log.Fatalf("Failed to dial GRPC server %v", err)
 			}
