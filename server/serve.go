@@ -415,6 +415,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							logEntries = append(logEntries, newEntry)
 						}
 						if prepared {
+							log.Printf("It is already prepared")
 							digest := prepareMsg.Digest
 							if isByzantine {
 								digest = tamper(digest)
