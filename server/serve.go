@@ -270,17 +270,17 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 		select {
 		case <-timer.C:
 			// printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
-			if curreSeqID != -1 && (curreSeqID+1 <= int64(len(logEntries))) {
-				oldEntry := logEntries[curreSeqID]
-				if !(oldEntry.committedLocal) {
-					if isCommittedLocal(oldEntry, numberOfPeers) {
-						log.Printf("Deadlock case check")
-						oldEntry.committedLocal = true
-						clr := oldEntry.clientReq
-						s.HandleCommand(clr, currentView, id, curreSeqID)
-					}
-				}
-			}
+			// if curreSeqID != -1 && (curreSeqID+1 <= int64(len(logEntries))) {
+			// 	oldEntry := logEntries[curreSeqID]
+			// 	if !(oldEntry.committedLocal) {
+			// 		if isCommittedLocal(oldEntry, numberOfPeers) {
+			// 			log.Printf("Deadlock case check")
+			// 			oldEntry.committedLocal = true
+			// 			clr := oldEntry.clientReq
+			// 			s.HandleCommand(clr, currentView, id, curreSeqID)
+			// 		}
+			// 	}
+			// }
 			util.RestartTimer(timer, r)
 
 		case <-vcTimer.Timer.C:
