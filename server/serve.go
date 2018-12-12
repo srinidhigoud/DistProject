@@ -292,7 +292,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			viewChange := pb.Msg_Vcm{Vcm: &viewChange_temp}
 			for p, c := range peerClients {
 				go func(c pb.PbftClient, p string) {
-					time.Sleep(100 * time.Millisecond)
+					//time.Sleep(100 * time.Millisecond)
 					_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "ViewChange", Arg: &viewChange})
 				}(c, p)
 			}
@@ -324,7 +324,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						go func(c pb.PbftClient) {
 							crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
 							crp := pb.Msg_Crm{Crm: &crp_temp}
-							time.Sleep(100 * time.Millisecond)
+							//time.Sleep(100 * time.Millisecond)
 							c.SendPbftMsg(context.Background(),
 								&pb.Msg{Operation: "Redirect", Arg: &crp})
 						}(client)
@@ -346,7 +346,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					viewChange := pb.Msg_Vcm{Vcm: &viewChange_temp}
 					for p, c := range peerClients {
 						go func(c pb.PbftClient, p string) {
-							time.Sleep(100 * time.Millisecond)
+							//time.Sleep(100 * time.Millisecond)
 							_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "ViewChange", Arg: &viewChange})
 						}(c, p)
 					}
@@ -393,7 +393,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						prepareMsg_temp := pb.Msg_Pm{Pm: &prepareMsg}
 						for p, c := range peerClients {
 							go func(c pb.PbftClient, p string) {
-								time.Sleep(100 * time.Millisecond)
+								//time.Sleep(100 * time.Millisecond)
 								_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Prepare", Arg: &prepareMsg_temp})
 
 							}(c, p)
@@ -449,7 +449,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							commitMsg_temp := pb.Msg_Cm{Cm: &commitMsg}
 							for p, c := range peerClients {
 								go func(c pb.PbftClient, p string) {
-									time.Sleep(100 * time.Millisecond)
+									//time.Sleep(100 * time.Millisecond)
 									_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Commit", Arg: &commitMsg_temp})
 
 								}(c, p)
@@ -500,7 +500,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								vcTimer.Stop()
 								// Execute and finally send back to client to aggregate
 								clr := oldEntry.clientReq
-								time.Sleep(100 * time.Millisecond)
+								//time.Sleep(100 * time.Millisecond)
 								s.HandleCommand(clr, currentView, id, curreSeqID)
 
 							}

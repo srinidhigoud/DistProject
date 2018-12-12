@@ -274,6 +274,7 @@ func main() {
 			break
 		}
 	}
+
 	log.Printf("Done putting")
 	log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
 	if res.GetKv().Key != "hello" || res.GetKv().Value != "1" {
