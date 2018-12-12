@@ -547,7 +547,7 @@ func main() {
 			break
 		}
 	}
-	log.Printf("Done CASing")
+	log.Printf("Done CASing %v", res)
 	log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
 	if res.GetKv().Key != "hellooo" || res.GetKv().Value == "2" {
 		log.Fatalf("Get returned the wrong response")
