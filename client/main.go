@@ -156,7 +156,7 @@ func main() {
 	redirected := false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
-		time.Sleep(10 * time.Millisecond)
+		//time.Sleep(10 * time.Millisecond)
 		if err != nil {
 			log.Fatalf("Could not clear")
 			break
@@ -224,7 +224,7 @@ func main() {
 	for {
 
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
-		time.Sleep(10 * time.Millisecond)
+		//time.Sleep(10 * time.Millisecond)
 		if err != nil {
 			log.Fatalf("Put error")
 			break
@@ -295,7 +295,7 @@ func main() {
 	redirected = false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
-		time.Sleep(10 * time.Millisecond)
+		//time.Sleep(10 * time.Millisecond)
 		if err != nil {
 			log.Fatalf("Request error %v", err)
 			break
@@ -365,7 +365,7 @@ func main() {
 	redirected = false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
-		time.Sleep(10 * time.Millisecond)
+		//time.Sleep(10 * time.Millisecond)
 		if err != nil {
 			log.Fatalf("Request error %v", err)
 			break
@@ -435,7 +435,7 @@ func main() {
 	redirected = false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
-		time.Sleep(10 * time.Millisecond)
+		//time.Sleep(10 * time.Millisecond)
 		if err != nil {
 			log.Fatalf("Request error %v", err)
 			break
@@ -505,7 +505,7 @@ func main() {
 	redirected = false
 	for {
 		res, err, newprimary = acceptResult(mappedSeq, mappedVal, &pbft)
-		time.Sleep(10 * time.Millisecond)
+		//time.Sleep(10 * time.Millisecond)
 		if err != nil {
 			log.Fatalf("Request error %v", err)
 			break
