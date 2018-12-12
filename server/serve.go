@@ -554,6 +554,11 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					}
 					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 				} else {
+					if vcTimer.TimeRemaining() < 100*time.Millisecond {
+						dur := util.RandomDuration(r)
+						log.Printf("Resetting timer for duration - %v", dur)
+						vcTimer.Reset(dur)
+					}
 					result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
 					clientID := logEntries[len(logEntries)-1].clientReq.ClientID
 					client, err := util.ConnectToClient(clientID) //client connection
