@@ -288,7 +288,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					} else {
 						logEntries = append(logEntries, newEntry)
 					}
-					printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
+					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 				} else {
 					// Need to send some kind of redirect message
 					log.Printf("Send Back Redirect message - View Change")
@@ -307,7 +307,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					_, _ = c.ViewChangePBFT(context.Background(), &viewChange)
 				}(c, p)
 			}
-			printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
+			//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 
 		case vc := <-pbft.ViewChangeMsgChan:
 			// Got request for vote change
@@ -399,7 +399,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						}(c, p)
 					}
 				}
-				printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
+				//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 			} else {
 				log.Printf("Received PrePrepareMsgChan %v from primary %v", prePreMsg, prePreMsg.Node)
 				log.Printf("But.....Requested View Change")
@@ -454,7 +454,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						logEntries[prepareMsg.SequenceID] = oldEntry
 					}
 				}
-				printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
+				//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 			} else {
 				log.Printf("Received PrepareMsgChan %v", prepareMsg)
 				log.Printf("But.....Requested View Change")
@@ -489,7 +489,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						s.HandleCommand(clr, currentView, id, curreSeqID)
 					}
 				}
-				printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
+				//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 			} else {
 				log.Printf("Received CommitMsgChan %v", c.Arg.Node)
 				log.Printf("But.....Requested View Change")
