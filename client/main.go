@@ -51,7 +51,8 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 	for numberOfValidResponses < 2 { //lot of changes required for a better performance
 		log.Printf("waiting for a response")
 		select {
-		case msg := <-r.PbftMsgChan:
+		case inputChan := <-r.PbftMsgChan:
+			msg := inputChan.Arg
 			op := msg.Operation
 			res := msg.Arg
 			log.Printf("got a response")
