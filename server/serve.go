@@ -679,7 +679,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								log.Printf("Resetting timer for duration - %v", dur)
 								vcTimer.Reset(dur)
 							}
-							creq := logEntries[len(logEntries)-1].clientReq
+							creq := cr
 							ppm := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: util.Digest(creq), Request: creq, Node: id}
 							ppm_temp := pb.Msg_Ppm{Ppm: &ppm}
 							pp := "127.0.0.1:" + strconv.FormatInt(currentView+3001, 10)
