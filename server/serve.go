@@ -261,7 +261,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 	for {
 		select {
 		case <-timer.C:
-			printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
+			// printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 			util.RestartTimer(timer, r)
 		case inpChannel := <-s.C:
 			cr := inpChannel.clientRequest
