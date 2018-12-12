@@ -93,23 +93,19 @@ func main() {
 	mappedVal := make(map[int64]Validation)
 	var primary string
 	var pbftPort int
-	var port int
 	flag.IntVar(&pbftPort, "pbft", 3000,
 		"Port on which server should listen to Pbft requests")
-	flag.IntVar(&port, "port", 3009,
-		"Port on which server should listen to grpc requests")
 	flag.StringVar(&primary, "primary", "127.0.0.1:3005",
 		"Pbft Primary call")
 	flag.Parse()
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	// name, err := os.Hostname()
-	// if err != nil {
-	// 	log.Fatalf("Could not get hostname")
-	// }
-	id := fmt.Sprintf("%d", pbftPort)
-	// id = "127.0.0.1:" + id
+	name, err := os.Hostname()
+	if err != nil {
+		log.Fatalf("Could not get hostname")
+	}
+	id := fmt.Sprintf("%s:%d", name, pbftPort)
 	log.Printf("Starting the client with ID %s", id)
 	log.Printf("Connecting to %v", primary)
 
@@ -122,6 +118,7 @@ func main() {
 	log.Printf("Connected")
 	// Create a KvStore client
 	kvc := pb.NewKvStoreClient(conn)
+	port := 3008
 	res := &pb.Result{}
 	newprimary := ""
 	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput)}
@@ -145,7 +142,7 @@ func main() {
 		} else if newprimary == "" {
 			break
 		} else {
-			conn, err = grpc.Dial("127.0.0.1:"+newprimary, grpc.WithInsecure())
+			conn, err = grpc.Dial(newprimary, grpc.WithInsecure())
 			if err != nil {
 				log.Fatalf("Failed to dial GRPC server %v", err)
 			}
