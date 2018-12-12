@@ -394,8 +394,8 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							prepared := false
 							oldEntryC := logEntries[prePreMsg.SequenceID]
 							if !(oldEntryC.prepared) {
-								prepared = isPrepared(oldEntry, numberOfPeers)
-								oldEntry.prepared = prepared
+								prepared = isPrepared(oldEntryC, numberOfPeers)
+								oldEntryC.prepared = prepared
 							}
 							if prepared {
 								log.Printf("It is already prepared")
