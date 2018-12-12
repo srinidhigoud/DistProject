@@ -289,6 +289,11 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			util.RestartTimer(timer, r)
 
 		case <-vcTimer.Timer.C:
+			if vcTimer.TimeRemaining() < 100*time.Millisecond {
+				dur := util.RandomDuration(r)
+				log.Printf("Resetting timer for duration - %v", dur)
+				vcTimer.Reset(dur)
+			}
 			newView := (currentView + 1) % numberOfPeers
 			log.Printf("Timeout - initiate view change. New view - %v", newView)
 			viewChangePhase = true
@@ -309,6 +314,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				vc := msg.GetVcm()
 				newView := vc.NewView
 				if vc.Type == "new-view" {
+					vcTimer.Stop()
 					log.Printf("Switching to new view - %v || %v", newView, vc)
 					// Should send back redirect here for commands that weren't committed
 					iWasLeader := currentView == nodeID
