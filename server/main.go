@@ -21,6 +21,7 @@ func main() {
 	var r *rand.Rand
 	var seed int64
 	var peers util.ArrayPeers
+	var isByzantine bool
 	// var clients util.ArrayClients
 	var clientPort int
 	var pbftPort int
