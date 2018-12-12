@@ -18,49 +18,15 @@ import (
 	// "context"
 )
 
-//serve(&store, r, &peers, &clients, id, pbftPort)
-
-// The main service loop. All modifications to the KV store are run through here.
-// func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int) {
-func printClientRequest(cr pb.ClientRequest, view int64, seq int64) {
-	log.Printf("Received client request in view %v and seq %v", view, seq)
-	log.Printf("ClientRequest - operation : %v || timestamp : %v || clientId : %v", cr.Cmd.Operation, cr.Timestamp, cr.ClientID)
-}
-
-func printClientResponse(cr pb.ClientResponse, view int64, seq int64) {
-	log.Printf("Sending client response in view %v and seq %v", view, seq)
-	log.Printf("ClientResponse - viewId : %v || timestamp : %v || clientId : %v || node : %v || nodeResult : %v", cr.ViewId, cr.Timestamp, cr.ClientID, cr.Node, cr.NodeResult)
-}
-
-func printPrePrepareMsg(ppm pb.PrePrepareMsg, view int64, seq int64) {
-	log.Printf("Received pre-prepare request in view %v and seq %v", view, seq)
-	log.Printf("PrePrepareMsg - viewId : %v || sequenceID : %v || digest : %v || request : %v || node : %v", ppm.ViewId, ppm.SequenceID, ppm.Digest, ppm.Request, ppm.Node)
-}
-
-func printPrepareMsg(pm pb.PrepareMsg, view int64, seq int64) {
-	log.Printf("Received prepare request in view %v and seq %v", view, seq)
-	log.Printf("PrepareMsg - viewId : %v || sequenceID : %v || digest : %v || node : %v", pm.ViewId, pm.SequenceID, pm.Digest, pm.Node)
-}
-
-func printCommitMsg(cm pb.CommitMsg, view int64, seq int64) {
-	log.Printf("Received commit request in view %v and seq %v", view, seq)
-	log.Printf("CommitMsg - viewId : %v || sequenceID : %v || digest : %v || node : %v", cm.ViewId, cm.SequenceID, cm.Digest, cm.Node)
-}
-
-// func printPbftMsgAccepted(pma pb.PbftMsgAccepted, view int64, seq int64) {
-// 	log.Printf("Received msg acc in view %v and seq %v", view, seq)
-// 	log.Printf("PbftMsgAccepted - viewId : %v || sequenceID : %v || success : %v || typeOfAccepted : %v || node : %v", pma.ViewId, pma.SequenceID, pma.Success, pma.TypeOfAccepted, pma.Node)
-// }
-
 type logEntry struct {
-	viewId         int64
-	sequenceID     int64
-	clientReq      *pb.ClientRequest
-	prePrep        *pb.PrePrepareMsg
-	pre            []*pb.PrepareMsg
 	com            []*pb.CommitMsg
+	pre            []*pb.PrepareMsg
+	viewId         int64
+	prePrep        *pb.PrePrepareMsg
 	prepared       bool
+	clientReq      *pb.ClientRequest
 	committed      bool
+	sequenceID     int64
 	committedLocal bool
 }
 
@@ -219,6 +185,27 @@ func RandStringRunes(n int64) string {
 	return string(b)
 }
 
+type boolgen struct {
+	src       rand.Source
+	cache     int64
+	remaining int
+}
+
+func (b *boolgen) Bool() bool {
+	if b.remaining == 0 {
+		b.cache, b.remaining = b.src.Int63(), 63
+	}
+
+	result := b.cache&0x01 == 1
+	b.cache >>= 1
+	b.remaining--
+
+	return result
+}
+func New() *boolgen {
+	return &boolgen{src: rand.NewSource(time.Now().UnixNano())}
+}
+
 func tamper(digest string) string {
 	return RandStringRunes(int64(len(digest)))
 }
@@ -229,15 +216,8 @@ type ClientResponse struct {
 	node string
 }
 
-// type PbftMsgAccepted struct {
-// 	ret  *pb.PbftMsgAccepted
-// 	err  error
-// 	peer string
-// }
-
-//func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int) {
 func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int, isByzantine bool) {
-
+	faulty := New()
 	var evluated map[int64]bool
 	evluated = make(map[int64]bool)
 	log.Printf("The byzantine condition is %v", isByzantine)
@@ -256,8 +236,6 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 		log.Printf("Connected to %v", peer)
 	}
 
-	// pbftMsgAcceptedChan := make(chan PbftMsgAccepted)
-
 	currentView := int64(0)
 	curreSeqID := int64(-1)
 	var logEntries []logEntry
@@ -268,19 +246,19 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 	vcTimer.Stop()
 
 	viewChangePhase := false
-	numberOfVotes := int64(0)
+	numberOfVcr := int64(0)
 
 	for {
 		select {
 		case <-timer.C:
 			// printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 			if curreSeqID != -1 && (curreSeqID+1 <= int64(len(logEntries))) {
-				oldEntry := logEntries[curreSeqID]
-				if !(oldEntry.committedLocal) {
-					if isCommittedLocal(oldEntry, numberOfPeers) {
+				prevEntry := logEntries[curreSeqID]
+				if !(prevEntry.committedLocal) {
+					if isCommittedLocal(prevEntry, numberOfPeers) {
 						log.Printf("Deadlock case check")
-						oldEntry.committedLocal = true
-						clr := oldEntry.clientReq
+						prevEntry.committedLocal = true
+						clr := prevEntry.clientReq
 						s.HandleCommand(clr, currentView, id, curreSeqID)
 						evluated[clr.Timestamp] = true
 					}
@@ -306,7 +284,6 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "ViewChange", Arg: &viewChange})
 				}(c, p)
 			}
-			//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 
 		case inputChan := <-pbft.PbftMsgChan:
 			msg := inputChan.Arg
@@ -321,7 +298,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					checkPrimary := currentView == nodeID
 					currentView = newView
 					viewChangePhase = false
-					numberOfVotes = int64(0)
+					numberOfVcr = int64(0)
 					curreSeqID = vc.LastSequenceID
 
 					if checkPrimary {
@@ -344,13 +321,13 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				} else {
 					if newView == nodeID {
 						log.Printf("Received vote from %v", vc.Node)
-						numberOfVotes += 1
+						numberOfVcr += 1
 					} else {
 						log.Printf("Received view change request - %v", vc)
 					}
 				}
 				// New Primary
-				if numberOfVotes >= reqValidVC(numberOfPeers) {
+				if numberOfVcr >= reqValidVC(numberOfPeers) {
 					vcTimer.Stop()
 					log.Printf("Switching to new view - %v and taking on as primary", newView)
 					viewChange_temp := pb.ViewChangeMsg{Type: "new-view", NewView: newView, LastSequenceID: curreSeqID - 1, Node: strconv.FormatInt(newView+3001, 10)}
@@ -363,7 +340,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					}
 					viewChangePhase = false
 					currentView = newView
-					numberOfVotes = 0
+					numberOfVcr = 0
 					curreSeqID = vc.LastSequenceID
 				}
 			case "PrePrepare":
@@ -375,8 +352,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						log.Printf("Resetting timer for duration - %v", dur)
 						vcTimer.Reset(dur)
 					}
-					log.Printf("Received PrePrepareMsgChan %v from primary %v", prePreMsg, prePreMsg.Node)
-					printPrePrepareMsg(*prePreMsg, currentView, curreSeqID)
+					log.Printf("Received pre-prepare request %v in view %v and seq %v from %v", prePreMsg, currentView, curreSeqID, prePreMsg.Node)
 					verified := verifyPrePrepare(prePreMsg, currentView, curreSeqID, logEntries)
 					if verified {
 						digest := prePreMsg.Digest
@@ -386,27 +362,27 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						prepareMsg := pb.PrepareMsg{ViewId: prePreMsg.ViewId, SequenceID: prePreMsg.SequenceID, Digest: digest, Node: strconv.FormatInt(nodeID+3001, 10)}
 						if prePreMsg.SequenceID+1 <= int64(len(logEntries)) {
 							log.Printf("Had received a prepare msg before, so writing on previous curreSeqID - %v", prePreMsg.SequenceID)
-							oldEntry := logEntries[prePreMsg.SequenceID]
-							oldEntry.prePrep = prePreMsg
-							oldEntry.clientReq = prePreMsg.Request
-							oldPrepares := oldEntry.pre
-							oldPrepares = append(oldPrepares, &prepareMsg)
-							oldEntry.pre = oldPrepares
-							logEntries[prePreMsg.SequenceID] = oldEntry
+							prevEntry := logEntries[prePreMsg.SequenceID]
+							prevEntry.prePrep = prePreMsg
+							prevEntry.clientReq = prePreMsg.Request
+							prevPrepares := prevEntry.pre
+							prevPrepares = append(prevPrepares, &prepareMsg)
+							prevEntry.pre = prevPrepares
+							logEntries[prePreMsg.SequenceID] = prevEntry
 						} else {
 							log.Printf("Appending new entry to log")
 							newEntry := logEntry{viewId: prePreMsg.ViewId, sequenceID: prePreMsg.SequenceID, clientReq: prePreMsg.Request, prePrep: prePreMsg, pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false, committed: false, committedLocal: false}
-							oldPrepares := newEntry.pre
-							oldPrepares = append(oldPrepares, &prepareMsg)
-							newEntry.pre = oldPrepares
+							prevPrepares := newEntry.pre
+							prevPrepares = append(prevPrepares, &prepareMsg)
+							newEntry.pre = prevPrepares
 							logEntries = append(logEntries, newEntry)
 
 							//////fancy////////////////////////
 							prepared := false
-							oldEntryC := logEntries[len(logEntries)-1]
-							if !(oldEntryC.prepared) {
-								prepared = isPrepared(oldEntryC, numberOfPeers)
-								oldEntryC.prepared = prepared
+							prevEntryC := logEntries[len(logEntries)-1]
+							if !(prevEntryC.prepared) {
+								prepared = isPrepared(prevEntryC, numberOfPeers)
+								prevEntryC.prepared = prepared
 							}
 							if prepared {
 								log.Printf("It is already prepared")
@@ -424,11 +400,11 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 									}(c, p)
 									log.Printf("Sending Commit to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
 								}
-								oldEntry := logEntries[prePreMsg.SequenceID]
-								oldCommits := oldEntry.com
-								oldCommits = append(oldCommits, &commitMsg)
-								oldEntry.com = oldCommits
-								logEntries[prePreMsg.SequenceID] = oldEntry
+								prevEntry := logEntries[prePreMsg.SequenceID]
+								prevCommits := prevEntry.com
+								prevCommits = append(prevCommits, &commitMsg)
+								prevEntry.com = prevCommits
+								logEntries[prePreMsg.SequenceID] = prevEntry
 							}
 						}
 						prepareMsg_temp := pb.Msg_Pm{Pm: &prepareMsg}
@@ -441,7 +417,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							log.Printf("Sending Prepare to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
 						}
 					}
-					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
+
 				} else {
 					log.Printf("Received PrePrepareMsgChan %v from primary %v", prePreMsg, prePreMsg.Node)
 					log.Printf("But.....Requested View Change")
@@ -450,8 +426,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			case "Prepare":
 				prepareMsg := msg.GetPm()
 				if !viewChangePhase {
-					log.Printf("Received PrepareMsgChan %v", prepareMsg)
-					printPrepareMsg(*prepareMsg, currentView, curreSeqID)
+					log.Printf("Received prepare request %v in view %v and seq %v", prepareMsg, currentView, curreSeqID)
 					verified := verifyPrepare(prepareMsg, currentView, curreSeqID, logEntries)
 					if verified {
 						if vcTimer.TimeRemaining() < 100*time.Millisecond {
@@ -462,22 +437,22 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						prepared := false
 						if prepareMsg.SequenceID+1 <= int64(len(logEntries)) {
 							log.Printf("Normal case received pre-prepare before prepare - writing to entry in logs at - %v", prepareMsg.SequenceID)
-							oldEntry := logEntries[prepareMsg.SequenceID]
-							oldPrepares := oldEntry.pre
-							oldPrepares = append(oldPrepares, prepareMsg)
-							oldEntry.pre = oldPrepares
-							logEntries[prepareMsg.SequenceID] = oldEntry
-							if !(oldEntry.prepared) {
-								prepared = isPrepared(oldEntry, numberOfPeers)
-								oldEntry.prepared = prepared
+							prevEntry := logEntries[prepareMsg.SequenceID]
+							prevPrepares := prevEntry.pre
+							prevPrepares = append(prevPrepares, prepareMsg)
+							prevEntry.pre = prevPrepares
+							logEntries[prepareMsg.SequenceID] = prevEntry
+							if !(prevEntry.prepared) {
+								prepared = isPrepared(prevEntry, numberOfPeers)
+								prevEntry.prepared = prepared
 							}
-							logEntries[prepareMsg.SequenceID] = oldEntry
+							logEntries[prepareMsg.SequenceID] = prevEntry
 						} else {
 							log.Printf("Have received prepare before pre-prepare - appending new entry to logs")
 							newEntry := logEntry{viewId: prepareMsg.ViewId, sequenceID: prepareMsg.SequenceID, pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false, committed: false, committedLocal: false}
-							oldPrepares := newEntry.pre
-							oldPrepares = append(oldPrepares, prepareMsg)
-							newEntry.pre = oldPrepares
+							prevPrepares := newEntry.pre
+							prevPrepares = append(prevPrepares, prepareMsg)
+							newEntry.pre = prevPrepares
 							logEntries = append(logEntries, newEntry)
 						}
 						if prepared {
@@ -496,11 +471,11 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								}(c, p)
 								log.Printf("Sending Commit to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
 							}
-							oldEntry := logEntries[prepareMsg.SequenceID]
-							oldCommits := oldEntry.com
-							oldCommits = append(oldCommits, &commitMsg)
-							oldEntry.com = oldCommits
-							logEntries[prepareMsg.SequenceID] = oldEntry
+							prevEntry := logEntries[prepareMsg.SequenceID]
+							prevCommits := prevEntry.com
+							prevCommits = append(prevCommits, &commitMsg)
+							prevEntry.com = prevCommits
+							logEntries[prepareMsg.SequenceID] = prevEntry
 						}
 					}
 				} else {
@@ -511,8 +486,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			case "Commit":
 				commitMsg := msg.GetCm()
 				if !viewChangePhase {
-					log.Printf("Received CommitMsgChan %v", commitMsg.Node)
-					printCommitMsg(*commitMsg, currentView, curreSeqID)
+					log.Printf("Received commit request from %v in view %v and seq %v", commitMsg.Node, currentView, curreSeqID)
 					verified := verifyCommit(commitMsg, currentView, curreSeqID, logEntries)
 					if verified {
 						if vcTimer.TimeRemaining() < 100*time.Millisecond {
@@ -523,24 +497,24 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						committedLocal := false
 						if commitMsg.SequenceID+1 <= int64(len(logEntries)) {
 							log.Printf("Normal case received prepare before commit - writing to entry in logs at - %v", commitMsg.SequenceID)
-							oldEntry := logEntries[commitMsg.SequenceID]
-							oldCommits := oldEntry.com
-							oldCommits = append(oldCommits, commitMsg)
-							oldEntry.com = oldCommits
-							logEntries[commitMsg.SequenceID] = oldEntry
-							committed := isCommitted(oldEntry, numberOfPeers)
-							oldEntry.committed = committed
-							if !(oldEntry.committedLocal) {
-								committedLocal = isCommittedLocal(oldEntry, numberOfPeers)
-								oldEntry.committedLocal = committedLocal
+							prevEntry := logEntries[commitMsg.SequenceID]
+							prevCommits := prevEntry.com
+							prevCommits = append(prevCommits, commitMsg)
+							prevEntry.com = prevCommits
+							logEntries[commitMsg.SequenceID] = prevEntry
+							committed := isCommitted(prevEntry, numberOfPeers)
+							prevEntry.committed = committed
+							if !(prevEntry.committedLocal) {
+								committedLocal = isCommittedLocal(prevEntry, numberOfPeers)
+								prevEntry.committedLocal = committedLocal
 							} else {
 								vcTimer.Stop()
 							}
-							logEntries[commitMsg.SequenceID] = oldEntry
+							logEntries[commitMsg.SequenceID] = prevEntry
 							if committedLocal {
 								vcTimer.Stop()
 								// Execute and finally send back to client to aggregate
-								clr := oldEntry.clientReq
+								clr := prevEntry.clientReq
 								//time.Sleep(100 * time.Millisecond)
 								s.HandleCommand(clr, currentView, id, curreSeqID)
 								evluated[clr.Timestamp] = true
@@ -549,14 +523,14 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						} else {
 							log.Printf("Have received commit before prepare - appending new entry to logs")
 							newEntry := logEntry{viewId: commitMsg.ViewId, sequenceID: commitMsg.SequenceID, pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false, committed: false, committedLocal: false}
-							oldCommits := newEntry.com
-							oldCommits = append(oldCommits, commitMsg)
-							newEntry.com = oldCommits
+							prevCommits := newEntry.com
+							prevCommits = append(prevCommits, commitMsg)
+							newEntry.com = prevCommits
 							logEntries = append(logEntries, newEntry)
 						}
 
 					}
-					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
+
 				} else {
 					log.Printf("Received CommitMsgChan %v", commitMsg.Node)
 					log.Printf("But.....Requested View Change")
@@ -569,61 +543,62 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 		case inpChannel := <-s.C:
 			cr := inpChannel.clientRequest
 			val, exists := evluated[cr.Timestamp]
-			if exists && val {
-				s.HandleCommand(cr, currentView, id, curreSeqID)
-			} else {
-				evluated[cr.Timestamp] = false
-				if !viewChangePhase {
-					if currentView == nodeID {
-						log.Printf("Received ClientRequestChan %v", cr.ClientID)
-						printClientRequest(*cr, currentView, curreSeqID)
-						curreSeqID += 1
-						digest := util.Digest(cr)
-						if isByzantine {
-							digest = tamper(digest)
-						}
-						prePreMsg := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
-						prePreMsg_temp := pb.Msg_Ppm{Ppm: &prePreMsg}
-						for p, c := range peerClients {
-							go func(c pb.PbftClient, p string) {
-								_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "PrePrepare", Arg: &prePreMsg_temp})
-
-							}(c, p)
-							log.Printf("Sending PrePrepare to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
-						}
-						newEntry := logEntry{viewId: currentView, sequenceID: curreSeqID, clientReq: cr, prePrep: &prePreMsg,
-							pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false,
-							committed: false, committedLocal: false}
-						if int64(len(logEntries)) >= curreSeqID+1 {
-							logEntries[curreSeqID] = newEntry
-						} else {
-							logEntries = append(logEntries, newEntry)
-						}
-						//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
-					} else {
-						if vcTimer.TimeRemaining() < 100*time.Millisecond {
-							dur := util.RandomDuration(r)
-							log.Printf("Resetting timer for duration - %v", dur)
-							vcTimer.Reset(dur)
-						}
-						result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
-						clientID := cr.ClientID
-						client, err := util.ConnectToClient(clientID) //client connection
-						if err != nil {
-							log.Fatalf("Failed to connect to GRPC server %v", err)
-						}
-						log.Printf("Connected to %v", clientID)
-						go func(c pb.PbftClient) {
-							crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
-							crp := pb.Msg_Crm{Crm: &crp_temp}
-							c.SendPbftMsg(context.Background(),
-								&pb.Msg{Operation: "Redirect", Arg: &crp})
-						}(client)
-						log.Printf("Send Back Redirect message - Wrong primary, connected back to client %v", clientID)
-					}
+			if faulty.bool() {
+				if exists && val {
+					s.HandleCommand(cr, currentView, id, curreSeqID)
 				} else {
-					log.Printf("Received ClientRequestChan %v", cr.ClientID)
-					log.Printf("But.....Requested View Change")
+					evluated[cr.Timestamp] = false
+					if !viewChangePhase {
+						if currentView == nodeID {
+							log.Printf("Received client request in view %v and seq %v from %v", currentView, curreSeqID, cr.ClientID)
+							curreSeqID += 1
+							digest := util.Digest(cr)
+							if isByzantine {
+								digest = tamper(digest)
+							}
+							prePreMsg := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
+							prePreMsg_temp := pb.Msg_Ppm{Ppm: &prePreMsg}
+							for p, c := range peerClients {
+								go func(c pb.PbftClient, p string) {
+									_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "PrePrepare", Arg: &prePreMsg_temp})
+
+								}(c, p)
+								log.Printf("Sending PrePrepare to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
+							}
+							newEntry := logEntry{viewId: currentView, sequenceID: curreSeqID, clientReq: cr, prePrep: &prePreMsg,
+								pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false,
+								committed: false, committedLocal: false}
+							if int64(len(logEntries)) >= curreSeqID+1 {
+								logEntries[curreSeqID] = newEntry
+							} else {
+								logEntries = append(logEntries, newEntry)
+							}
+
+						} else {
+							if vcTimer.TimeRemaining() < 100*time.Millisecond {
+								dur := util.RandomDuration(r)
+								log.Printf("Resetting timer for duration - %v", dur)
+								vcTimer.Reset(dur)
+							}
+							result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
+							clientID := cr.ClientID
+							client, err := util.ConnectToClient(clientID) //client connection
+							if err != nil {
+								log.Fatalf("Failed to connect to GRPC server %v", err)
+							}
+							log.Printf("Connected to %v", clientID)
+							go func(c pb.PbftClient) {
+								crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
+								crp := pb.Msg_Crm{Crm: &crp_temp}
+								c.SendPbftMsg(context.Background(),
+									&pb.Msg{Operation: "Redirect", Arg: &crp})
+							}(client)
+							log.Printf("Send Back Redirect message - Wrong primary, connected back to client %v", clientID)
+						}
+					} else {
+						log.Printf("Received ClientRequestChan %v", cr.ClientID)
+						log.Printf("But.....Requested View Change")
+					}
 				}
 			}
 
