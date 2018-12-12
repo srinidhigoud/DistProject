@@ -86,8 +86,8 @@ func RandomDuration(r *rand.Rand) time.Duration {
 }
 
 func RandomDuration2(r *rand.Rand) time.Duration {
-	const DurationMax = 400
-	const DurationMin = 100
+	const DurationMax = 8000
+	const DurationMin = 1000
 	return time.Duration(r.Intn(DurationMax-DurationMin)+DurationMin) * time.Millisecond
 }
 
