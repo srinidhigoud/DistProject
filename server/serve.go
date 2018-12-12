@@ -295,6 +295,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				vcTimer.Reset(dur)
 			}
 			newView := (currentView + 1) % numberOfPeers
+			currentView = newView
 			log.Printf("Timeout - initiate view change. New view - %v", newView)
 			viewChangePhase = true
 			viewChange_temp := pb.ViewChangeMsg{Type: "view-change", NewView: newView, LastSequenceID: curreSeqID - 1, Node: id}
@@ -317,13 +318,13 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					vcTimer.Stop()
 					log.Printf("Switching to new view - %v || %v", newView, vc)
 					// Should send back redirect here for commands that weren't committed
-					iWasLeader := currentView == nodeID
+					checkPrimary := currentView == nodeID
 					currentView = newView
 					viewChangePhase = false
 					numberOfVotes = int64(0)
 					curreSeqID = vc.LastSequenceID
 
-					if iWasLeader {
+					if checkPrimary {
 						result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(newView+3005, 10)}}}
 						clientID := logEntries[len(logEntries)-1].clientReq.ClientID
 						client, err := util.ConnectToClient(clientID) //client connection
