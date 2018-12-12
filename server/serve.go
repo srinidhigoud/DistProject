@@ -162,6 +162,7 @@ func isPrepared(entry logEntry, n int64) bool {
 }
 
 func isCommitted(entry logEntry, n int64) bool {
+	log.Printf("Entering commiitted")
 	prepared := isPrepared(entry, n)
 	if prepared {
 		prePreMsg := entry.prePrep
