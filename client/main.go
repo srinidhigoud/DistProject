@@ -51,9 +51,11 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
 	for numberOfValidResponses < 2 { //lot of changes required for a better performance
 		log.Printf("waiting for a response")
 		select {
-		case res := <-r.ResponseChan:
+		case msg := <-r.PbftMsgChan:
+			op := msg.Operation
+			res := msg.Arg
 			log.Printf("got a response")
-			if res.SequenceID < 0 {
+			if res.SequenceID < 0 || op == "Redirect" {
 
 				primary := res.NodeResult.GetRedirect().GetServer()
 				log.Printf("redirect now to %v", primary)
@@ -118,7 +120,7 @@ func main() {
 	port := 3008
 	res := &pb.Result{}
 	newprimary := ""
-	pbft := util.Pbft{PrePrepareMsgChan: make(chan util.PrePrepareMsgInput), PrepareMsgChan: make(chan util.PrepareMsgInput), CommitMsgChan: make(chan util.CommitMsgInput), ViewChangeMsgChan: make(chan util.ViewChangeMsgInput), ResponseChan: make(chan *pb.ClientResponse)}
+	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput)}
 	go util.RunPbftServer(&pbft, port)
 	//&pb.ClientRequest{cmd: ,timestamp: time_now,clientID: id}
 	// Clear KVC

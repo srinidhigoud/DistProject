@@ -21,59 +21,63 @@ import (
 
 // Messages that can be passed from the Pbft RPC server to the main loop for AppendEntries
 
-type PrePrepareMsgInput struct {
-	Arg *pb.PrePrepareMsg
+// type PrePrepareMsgInput struct {
+// 	Arg *pb.PrePrepareMsg
+// }
+
+type PbftMsgInput struct {
+	Arg *pb.Msg
 }
 
-type PrepareMsgInput struct {
-	Arg *pb.PrepareMsg
-}
+// type PrepareMsgInput struct {
+// 	Arg *pb.PrepareMsg
+// }
 
-type CommitMsgInput struct {
-	Arg *pb.CommitMsg
-}
+// type CommitMsgInput struct {
+// 	Arg *pb.CommitMsg
+// }
 
-type ViewChangeMsgInput struct {
-	Arg *pb.ViewChangeMsg
-}
+// type ViewChangeMsgInput struct {
+// 	Arg *pb.ViewChangeMsg
+// }
 type Pbft struct {
-	PrePrepareMsgChan chan PrePrepareMsgInput
-	PrepareMsgChan    chan PrepareMsgInput
-	CommitMsgChan     chan CommitMsgInput
-	ViewChangeMsgChan chan ViewChangeMsgInput
-	ResponseChan      chan *pb.ClientResponse
+	PbftMsgChan chan PbftMsgInput
+	// PrepareMsgChan    chan PrepareMsgInput
+	// CommitMsgChan     chan CommitMsgInput
+	// ViewChangeMsgChan chan ViewChangeMsgInput
+	// ResponseChan      chan *pb.ClientResponse
 }
 
-func (r *Pbft) PrePreparePBFT(ctx context.Context, arg *pb.PrePrepareMsg) (*pb.Success, error) {
-	r.PrePrepareMsgChan <- PrePrepareMsgInput{Arg: arg}
+func (r *Pbft) SendPbftMsg(ctx context.Context, arg *pb.Msg) (*pb.Success, error) {
+	r.PbftMsgChan <- PbftMsgInput{Arg: arg}
 	result := pb.Success{}
 	return &result, nil
 }
 
-func (r *Pbft) PreparePBFT(ctx context.Context, arg *pb.PrepareMsg) (*pb.Success, error) {
-	r.PrepareMsgChan <- PrepareMsgInput{Arg: arg}
-	result := pb.Success{}
-	return &result, nil
-}
+// func (r *Pbft) PreparePBFT(ctx context.Context, arg *pb.PrepareMsg) (*pb.Success, error) {
+// 	r.PrepareMsgChan <- PrepareMsgInput{Arg: arg}
+// 	result := pb.Success{}
+// 	return &result, nil
+// }
 
-func (r *Pbft) CommitPBFT(ctx context.Context, arg *pb.CommitMsg) (*pb.Success, error) {
-	r.CommitMsgChan <- CommitMsgInput{Arg: arg}
-	result := pb.Success{}
-	return &result, nil
-}
+// func (r *Pbft) CommitPBFT(ctx context.Context, arg *pb.CommitMsg) (*pb.Success, error) {
+// 	r.CommitMsgChan <- CommitMsgInput{Arg: arg}
+// 	result := pb.Success{}
+// 	return &result, nil
+// }
 
-func (r *Pbft) ViewChangePBFT(ctx context.Context, arg *pb.ViewChangeMsg) (*pb.Success, error) {
-	r.ViewChangeMsgChan <- ViewChangeMsgInput{Arg: arg}
-	result := pb.Success{}
-	return &result, nil
-}
+// func (r *Pbft) ViewChangePBFT(ctx context.Context, arg *pb.ViewChangeMsg) (*pb.Success, error) {
+// 	r.ViewChangeMsgChan <- ViewChangeMsgInput{Arg: arg}
+// 	result := pb.Success{}
+// 	return &result, nil
+// }
 
-func (r *Pbft) SendResponseBack(ctx context.Context, Arg *pb.ClientResponse) (*pb.Success, error) {
-	r.ResponseChan <- Arg
-	result := pb.Success{}
-	return &result, nil
+// func (r *Pbft) SendResponseBack(ctx context.Context, Arg *pb.ClientResponse) (*pb.Success, error) {
+// 	r.ResponseChan <- Arg
+// 	result := pb.Success{}
+// 	return &result, nil
 
-}
+// }
 
 func RandomDuration(r *rand.Rand) time.Duration {
 	const DurationMax = 4000

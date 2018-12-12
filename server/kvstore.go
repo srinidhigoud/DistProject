@@ -108,8 +108,10 @@ func (s *KVStore) HandleCommand(req *pb.ClientRequest, viewId int64, node string
 		}
 		log.Printf("Connected to %v", clientID)
 		go func(c pb.PbftClient) {
-			c.SendResponseBack(context.Background(),
-				&pb.ClientResponse{ViewId: viewId, Timestamp: timestamp, ClientID: clientID, Node: node, NodeResult: &result, SequenceID: sequenceID})
+			cresponse := pb.ClientResponse{ViewId: viewId, Timestamp: timestamp, ClientID: clientID, Node: node, NodeResult: &result, SequenceID: sequenceID}
+			cr := pb.Msg_Crm{Crm: &cresponse}
+			c.SendPbftMsg(context.Background(),
+				&pb.Msg{Operation: "Response", Arg: &cr})
 		}(client)
 	case pb.Op_SET:
 		arg := c.GetSet()
@@ -120,8 +122,10 @@ func (s *KVStore) HandleCommand(req *pb.ClientRequest, viewId int64, node string
 		}
 		log.Printf("Connected to %v", clientID)
 		go func(c pb.PbftClient) {
-			c.SendResponseBack(context.Background(),
-				&pb.ClientResponse{ViewId: viewId, Timestamp: timestamp, ClientID: clientID, Node: node, NodeResult: &result, SequenceID: sequenceID})
+			cresponse := pb.ClientResponse{ViewId: viewId, Timestamp: timestamp, ClientID: clientID, Node: node, NodeResult: &result, SequenceID: sequenceID}
+			cr := pb.Msg_Crm{Crm: &cresponse}
+			c.SendPbftMsg(context.Background(),
+				&pb.Msg{Operation: "Response", Arg: &cr})
 		}(client)
 	case pb.Op_CLEAR:
 		result := s.ClearInternal()
@@ -131,8 +135,10 @@ func (s *KVStore) HandleCommand(req *pb.ClientRequest, viewId int64, node string
 		}
 		log.Printf("Connected to %v", clientID)
 		go func(c pb.PbftClient) {
-			c.SendResponseBack(context.Background(),
-				&pb.ClientResponse{ViewId: viewId, Timestamp: timestamp, ClientID: clientID, Node: node, NodeResult: &result, SequenceID: sequenceID})
+			cresponse := pb.ClientResponse{ViewId: viewId, Timestamp: timestamp, ClientID: clientID, Node: node, NodeResult: &result, SequenceID: sequenceID}
+			cr := pb.Msg_Crm{Crm: &cresponse}
+			c.SendPbftMsg(context.Background(),
+				&pb.Msg{Operation: "Response", Arg: &cr})
 		}(client)
 	case pb.Op_CAS:
 		arg := c.GetCas()
@@ -143,8 +149,10 @@ func (s *KVStore) HandleCommand(req *pb.ClientRequest, viewId int64, node string
 		}
 		log.Printf("Connected to %v", clientID)
 		go func(c pb.PbftClient) {
-			c.SendResponseBack(context.Background(),
-				&pb.ClientResponse{ViewId: viewId, Timestamp: timestamp, ClientID: clientID, Node: node, NodeResult: &result, SequenceID: sequenceID})
+			cresponse := pb.ClientResponse{ViewId: viewId, Timestamp: timestamp, ClientID: clientID, Node: node, NodeResult: &result, SequenceID: sequenceID}
+			cr := pb.Msg_Crm{Crm: &cresponse}
+			c.SendPbftMsg(context.Background(),
+				&pb.Msg{Operation: "Response", Arg: &cr})
 		}(client)
 	default:
 		// Sending a blank response to just free things up, but we don't know how to make progress here.
@@ -155,8 +163,10 @@ func (s *KVStore) HandleCommand(req *pb.ClientRequest, viewId int64, node string
 		}
 		log.Printf("Connected to %v", clientID)
 		go func(c pb.PbftClient) {
-			c.SendResponseBack(context.Background(),
-				&pb.ClientResponse{ViewId: viewId, Timestamp: timestamp, ClientID: clientID, Node: node, NodeResult: &result, SequenceID: sequenceID})
+			cresponse := pb.ClientResponse{ViewId: viewId, Timestamp: timestamp, ClientID: clientID, Node: node, NodeResult: &result, SequenceID: sequenceID}
+			cr := pb.Msg_Crm{Crm: &cresponse}
+			c.SendPbftMsg(context.Background(),
+				&pb.Msg{Operation: "Response", Arg: &cr})
 		}(client)
 		log.Fatalf("Unrecognized operation %v", c)
 	}
