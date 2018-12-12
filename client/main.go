@@ -101,10 +101,10 @@ func main() {
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	name, err := os.Hostname()
-	if err != nil {
-		log.Fatalf("Could not get hostname")
-	}
+	// name, err := os.Hostname()
+	// if err != nil {
+	// 	log.Fatalf("Could not get hostname")
+	// }
 	id := fmt.Sprintf("%d", pbftPort)
 	log.Printf("Starting the client with ID %s", id)
 	log.Printf("Connecting to %v", primary)
