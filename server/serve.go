@@ -429,7 +429,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								// 	_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "Commit", Arg: &commitMsg_temp})
 
 								// }(c, p)
-								log.Printf("Sending Commit to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
+								log.Printf("Sending Commit to %v for current view %v, sequenceID %v -- %v", p, currentView, curreSeqID, c)
 							}
 							oldEntry := logEntries[prepareMsg.SequenceID]
 							oldCommits := oldEntry.com
