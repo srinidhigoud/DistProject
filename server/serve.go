@@ -276,7 +276,11 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 			currentView = newView
 			log.Printf("Timeout - initiate view change. New view - %v", newView)
 			viewChangePhase = true
-			viewChange_temp := pb.ViewChangeMsg{Type: "view-change", NewView: newView, LastSequenceID: curreSeqID - 1, Node: id}
+			sequID := curreSeqID
+			if curreSeqID > 0 {
+				sequID -= 1
+			}
+			viewChange_temp := pb.ViewChangeMsg{Type: "view-change", NewView: newView, LastSequenceID: sequID, Node: id}
 			viewChange := pb.Msg_Vcm{Vcm: &viewChange_temp}
 			for p, c := range peerClients {
 				go func(c pb.PbftClient, p string) {
