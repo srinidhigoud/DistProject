@@ -378,7 +378,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				newView := vc.NewView
 				if vc.Type == "new-view" {
 					vcTimer.Stop()
-					log.Printf("Switching to new view - %v || %v", newView, vc)
+					log.Printf("Transitionaing to new view - %v || %v", newView, vc)
 					// Should send back redirect here for commands that weren't committed
 					checkPrimary := currentView == nodeID
 					currentView = newView
@@ -425,7 +425,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				// New Primary
 				if numberOfVcr >= reqValidVC(numberOfPeers) {
 					vcTimer.Stop()
-					log.Printf("Switching to new view - %v and taking on as primary", newView)
+					log.Printf("Transitionaing to view %v and I am primary", newView)
 					viewChange_temp := pb.ViewChangeMsg{Type: "new-view", NewView: newView, LastSequenceID: curreSeqID - 1, Node: strconv.FormatInt(newView+3001, 10)}
 					viewChange := pb.Msg_Vcm{Vcm: &viewChange_temp}
 					for p, c := range peerClients {
@@ -458,7 +458,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						}
 						prepareMsg := pb.PrepareMsg{ViewId: prePreMsg.ViewId, SequenceID: prePreMsg.SequenceID, Digest: digest, Node: strconv.FormatInt(nodeID+3001, 10)}
 						if prePreMsg.SequenceID+1 <= int64(len(logEntries)) {
-							log.Printf("Had received a prepare msg before, so writing on previous curreSeqID - %v", prePreMsg.SequenceID)
+							// log.Printf("Had received a prepare msg before, so writing on previous curreSeqID - %v", prePreMsg.SequenceID)
 							prevEntry := logEntries[prePreMsg.SequenceID]
 							prevEntry.prePrep = prePreMsg
 							prevEntry.clientReq = prePreMsg.Request
@@ -517,8 +517,8 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 
 				} else {
 					log.Printf("Received PrePrepareMsgChan %v from primary %v", prePreMsg, prePreMsg.Node)
-					log.Printf("But.....Requested View Change")
-					log.Printf("Send Back Redirect message - View Change")
+					// log.Printf("But.....Requested View Change")
+					// log.Printf("Send Back Redirect message - View Change")
 				}
 			case "Prepare":
 				prepareMsg := msg.GetPm()
@@ -533,7 +533,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						}
 						prepared := false
 						if prepareMsg.SequenceID+1 <= int64(len(logEntries)) {
-							log.Printf("Normal case received pre-prepare before prepare - writing to entry in logs at - %v", prepareMsg.SequenceID)
+							// log.Printf("Normal case received pre-prepare before prepare - writing to entry in logs at - %v", prepareMsg.SequenceID)
 							prevEntry := logEntries[prepareMsg.SequenceID]
 							prevPrepares := prevEntry.pre
 							prevPrepares = append(prevPrepares, prepareMsg)
@@ -545,7 +545,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							}
 							logEntries[prepareMsg.SequenceID] = prevEntry
 						} else {
-							log.Printf("Have received prepare before pre-prepare - appending new entry to logs")
+							// log.Printf("Have received prepare before pre-prepare - appending new entry to logs")
 							newEntry := logEntry{viewId: prepareMsg.ViewId, sequenceID: prepareMsg.SequenceID, pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false, committed: false, committedLocal: false}
 							prevPrepares := newEntry.pre
 							prevPrepares = append(prevPrepares, prepareMsg)
@@ -577,8 +577,8 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					}
 				} else {
 					log.Printf("Received PrepareMsgChan %v", prepareMsg)
-					log.Printf("But.....Requested View Change")
-					log.Printf("Send Back Redirect message - View Change")
+					// log.Printf("But.....Requested View Change")
+					// log.Printf("Send Back Redirect message - View Change")
 				}
 			case "Commit":
 				commitMsg := msg.GetCm()
@@ -630,8 +630,8 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 
 				} else {
 					log.Printf("Received CommitMsgChan %v", commitMsg.Node)
-					log.Printf("But.....Requested View Change")
-					log.Printf("Send Back Redirect message - View Change")
+					// log.Printf("But.....Requested View Change")
+					// log.Printf("Send Back Redirect message - View Change")
 				}
 			default:
 				log.Printf("Strange to arrive here1")
@@ -711,7 +711,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						}
 					} else {
 						log.Printf("Received ClientRequestChan %v", cr.ClientID)
-						log.Printf("But.....Requested View Change")
+						// log.Printf("But.....Requested View Change")
 					}
 				}
 			}
