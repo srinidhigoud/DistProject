@@ -305,12 +305,13 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				if vc.Type == "new-view" {
 					log.Printf("Switching to new view - %v || %v", newView, vc)
 					// Should send back redirect here for commands that weren't committed
+					iWasLeader := currentView == nodeID
 					currentView = newView
 					viewChangePhase = false
 					numberOfVotes = int64(0)
 					curreSeqID = vc.LastSequenceID
 
-					if currentView == nodeID {
+					if iWasLeader {
 						result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(newView+3001, 10)}}}
 						clientID := logEntries[len(logEntries)-1].clientReq.ClientID
 						client, err := util.ConnectToClient(clientID) //client connection
