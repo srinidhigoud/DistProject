@@ -1,25 +1,25 @@
 package main
 
 import (
-    "flag"
-    "fmt"
-    "log"
-    rand "math/rand"
-    "os"
-    "time"
+	"flag"
+    "fmt"
+    "log"
+	rand "math/rand"
+    "os"
+    "time"
 
-    context "golang.org/x/net/context"
+	context "golang.org/x/net/context"
 
-    // "google.golang.org/grpc"
+    // "google.golang.org/grpc"
 
-    "github.com/nyu-distributed-systems-fa18/DistProject/pb"
-    "github.com/nyu-distributed-systems-fa18/DistProject/util"
+    "github.com/nyu-distributed-systems-fa18/DistProject/pb"
+    "github.com/nyu-distributed-systems-fa18/DistProject/util"
 
-    // "DistProject/pb"
-    // "DistProject/util"
-    // "context"
+    // "DistProject/pb"
+    // "DistProject/util"
+    // "context"
 
-    "google.golang.org/grpc"
+    "google.golang.org/grpc"
 )
 
 type Validation struct {
@@ -37,23 +37,22 @@ func usage() {
 func compare(v1 Validation, v2 Validation) bool {
     return true
 
-    // if v1.t == v2.t {
-    //  if v1.k == v2.k {
-    //      if v1.v == v2.v {
-    //          return true
-    //      }
-    //  }
-    // }
-    // return false
+    // if v1.t == v2.t {
+    //  if v1.k == v2.k {
+    //      if v1.v == v2.v {
+    //          return true
+    //      }
+    //  }
+    // }
+    // return false
 }
-
 func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft) (*pb.Result, error, string) {
     var rd *rand.Rand
     rd = rand.New(rand.NewSource(time.Now().UnixNano()))
     numberOfValidResponses := int64(0)
     val := pb.Result{}
     clientTimer := util.NewSecondsTimer(util.RandomDuration(rd))
-    // clientTimer.Stop()
+    // clientTimer.Stop()
     for numberOfValidResponses < 2 { //lot of changes required for a better performance
         log.Printf("waiting for a response")
         select {
@@ -100,13 +99,13 @@ func acceptResult(mapS map[int64]int64, mapV map[int64]Validation, r *util.Pbft)
             // default:
             //  continue
         }
-    }
+    }
     clientTimer.Stop()
     return &val, nil, ""
 }
 
 func main() {
-    // Take endpoint as input
+    // Take endpoint as input
     mappedSeq := make(map[int64]int64)
     mappedVal := make(map[int64]Validation)
     var primary string
@@ -119,34 +118,34 @@ func main() {
 
     log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-    // name, err := os.Hostname()
-    // if err != nil {
-    //  log.Fatalf("Could not get hostname")
-    // }
+    // name, err := os.Hostname()
+    // if err != nil {
+    //  log.Fatalf("Could not get hostname")
+    // }
     id := fmt.Sprintf("%d", pbftPort)
     id = "127.0.0.1:" + id
     log.Printf("Starting the client with ID %s", id)
     log.Printf("Connecting to %v", primary)
 
-    // Connect to the server. We use WithInsecure since we do not configure https in this class.
+    // Connect to the server. We use WithInsecure since we do not configure https in this class.
     conn, err := grpc.Dial(primary, grpc.WithInsecure())
-    //Ensure connection did not fail.
+    //Ensure connection did not fail.
     if err != nil {
         log.Fatalf("Failed to dial GRPC server %v", err)
-    }
+    }
     log.Printf("Connected")
-    // Create a KvStore client
+    // Create a KvStore client
     kvc := pb.NewKvStoreClient(conn)
 
-    // port := 3000
+    // port := 3000
     res := &pb.Result{}
     newprimary := ""
     pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput)}
     go util.RunPbftServer(&pbft, pbftPort)
-    //&pb.ClientRequest{cmd: ,timestamp: time_now,clientID: id}
-    // Clear KVC
+    //&pb.ClientRequest{cmd: ,timestamp: time_now,clientID: id}
+    // Clear KVC
 
-    //CLEAR
+    //CLEAR
     time_now := time.Now().UnixNano()
     in := &pb.Empty{}
     r := pb.Command{Operation: pb.Op_CLEAR, Arg: &pb.Command_Clear{Clear: in}}
@@ -207,11 +206,11 @@ func main() {
         } else {
             break
         }
-    }
+    }
 
     log.Printf("Done clearing")
 
-    // Put setting hello -> 1
+    // Put setting hello -> 1
     time_now = time.Now().UnixNano()
     in2 := &pb.KeyValue{Key: "hello", Value: "1"}
     r = pb.Command{Operation: pb.Op_SET, Arg: &pb.Command_Set{Set: in2}}
@@ -272,14 +271,14 @@ func main() {
         } else {
             break
         }
-    }
+    }
     log.Printf("Done putting")
     log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
     if res.GetKv().Key != "hello" || res.GetKv().Value != "1" {
         log.Fatalf("Put returned the wrong response")
-    }
+    }
 
-    // Request value for hello
+    // Request value for hello
     time_now = time.Now().UnixNano()
     in3 := &pb.Key{Key: "hello"}
     r = pb.Command{Operation: pb.Op_GET, Arg: &pb.Command_Get{Get: in3}}
@@ -340,14 +339,14 @@ func main() {
         } else {
             break
         }
-    }
+    }
     log.Printf("Done getting")
     log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
     if res.GetKv().Key != "hello" || res.GetKv().Value != "1" {
         log.Fatalf("Get returned the wrong response")
-    }
+    }
 
-    // Successfully CAS changing hello -> 2
+    // Successfully CAS changing hello -> 2
     time_now = time.Now().UnixNano()
     in4 := &pb.CASArg{Kv: &pb.KeyValue{Key: "hello", Value: "1"}, Value: &pb.Value{Value: "2"}}
     r = pb.Command{Operation: pb.Op_CAS, Arg: &pb.Command_Cas{Cas: in4}}
@@ -408,14 +407,14 @@ func main() {
         } else {
             break
         }
-    }
+    }
     log.Printf("Done CASing")
     log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
     if res.GetKv().Key != "hello" || res.GetKv().Value != "2" {
         log.Fatalf("Get returned the wrong response")
-    }
+    }
 
-    // Unsuccessfully CAS
+    // Unsuccessfully CAS
     time_now = time.Now().UnixNano()
     in5 := &pb.CASArg{Kv: &pb.KeyValue{Key: "hello", Value: "1"}, Value: &pb.Value{Value: "3"}}
     r = pb.Command{Operation: pb.Op_CAS, Arg: &pb.Command_Cas{Cas: in5}}
@@ -476,14 +475,14 @@ func main() {
         } else {
             break
         }
-    }
+    }
     log.Printf("Done CASing")
     log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
     if res.GetKv().Key != "hello" || res.GetKv().Value == "3" {
         log.Fatalf("Get returned the wrong response")
-    }
+    }
 
-    // CAS should fail for uninitialized variables
+    // CAS should fail for uninitialized variables
     time_now = time.Now().UnixNano()
     in6 := &pb.CASArg{Kv: &pb.KeyValue{Key: "hellooo", Value: "1"}, Value: &pb.Value{Value: "2"}}
     r = pb.Command{Operation: pb.Op_CAS, Arg: &pb.Command_Cas{Cas: in6}}
@@ -544,11 +543,11 @@ func main() {
         } else {
             break
         }
-    }
+    }
     log.Printf("Done CASing")
     log.Printf("Got response key: \"%v\" value:\"%v\"", res.GetKv().Key, res.GetKv().Value)
     if res.GetKv().Key != "hellooo" || res.GetKv().Value == "2" {
         log.Fatalf("Get returned the wrong response")
-    }
+    }
 }
 
