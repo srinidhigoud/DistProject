@@ -154,8 +154,9 @@ func isPrepared(entry logEntry, n int64) bool {
 				validPrepares += 1
 			}
 		}
+		return validPrepares >= reqValidPrepare(n)
 		log.Printf("Is prepared check number of valid prepares is %v, len of entry:pre is %v", validPrepares, entry.pre)
-		return validPrepares == reqValidPrepare(n)
+		// return validPrepares >= 2
 	}
 	return false
 }
@@ -173,7 +174,7 @@ func isCommitted(entry logEntry, n int64) bool {
 			}
 		}
 		// return validCommits >= reqValidCommit(n)
-		return validCommits == reqValidCommit(n)
+		return validCommits >= reqValidCommit(n)
 	}
 	return false
 }
@@ -189,8 +190,7 @@ func isCommittedLocal(entry logEntry, n int64) bool {
 				validCommits += 1
 			}
 		}
-		// return validCommits >= reqValidCommitLocal(n)
-		return validCommits == reqValidCommitLocal(n)
+		return validCommits >= reqValidCommitLocal(n)
 	}
 	return false
 }
@@ -320,7 +320,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					}
 				}
 				// New Primary
-				if numberOfVotes == reqValidVC(numberOfPeers) {
+				if numberOfVotes >= reqValidVC(numberOfPeers) {
 					vcTimer.Stop()
 					log.Printf("Switching to new view - %v and taking on as primary", newView)
 					viewChange_temp := pb.ViewChangeMsg{Type: "new-view", NewView: newView, LastSequenceID: curreSeqID - 1, Node: strconv.FormatInt(nodeID+3001, 10)}
@@ -405,8 +405,10 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							oldPrepares = append(oldPrepares, prepareMsg)
 							oldEntry.pre = oldPrepares
 							logEntries[prepareMsg.SequenceID] = oldEntry
-							prepared = isPrepared(oldEntry, numberOfPeers)
-							oldEntry.prepared = prepared
+							if !(oldEntry.prepared) {
+								prepared = isPrepared(oldEntry, numberOfPeers)
+								oldEntry.prepared = prepared
+							}
 							logEntries[prepareMsg.SequenceID] = oldEntry
 						} else {
 							log.Printf("Have received prepare before pre-prepare - appending new entry to logs")
@@ -455,16 +457,30 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 							log.Printf("Resetting timer for duration - %v", dur)
 							vcTimer.Reset(dur)
 						}
-						oldEntry := logEntries[commitMsg.SequenceID]
-						oldCommits := oldEntry.com
-						oldCommits = append(oldCommits, commitMsg)
-						oldEntry.com = oldCommits
-						logEntries[commitMsg.SequenceID] = oldEntry
-						committed := isCommitted(oldEntry, numberOfPeers)
-						oldEntry.committed = committed
-						committedLocal := isCommittedLocal(oldEntry, numberOfPeers)
-						oldEntry.committedLocal = committedLocal
-						logEntries[commitMsg.SequenceID] = oldEntry
+						committedLocal := false
+						if commitMsg.SequenceID+1 <= int64(len(logEntries)) {
+							log.Printf("Normal case received prepare before commit - writing to entry in logs at - %v", commitMsg.SequenceID)
+							oldEntry := logEntries[commitMsg.SequenceID]
+							oldCommits := oldEntry.com
+							oldCommits = append(oldCommits, commitMsg)
+							oldEntry.com = oldCommits
+							logEntries[commitMsg.SequenceID] = oldEntry
+							committed := isCommitted(oldEntry, numberOfPeers)
+							oldEntry.committed = committed
+							if !(oldEntry.committedLocal) {
+								committedLocal = isCommittedLocal(oldEntry, numberOfPeers)
+								oldEntry.committedLocal = committedLocal
+							}
+							logEntries[commitMsg.SequenceID] = oldEntry
+						} else {
+							log.Printf("Have received commit before prepare - appending new entry to logs")
+							newEntry := logEntry{viewId: commitMsg.ViewId, sequenceID: commitMsg.SequenceID, pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false, committed: false, committedLocal: false}
+							oldCommits := newEntry.com
+							oldCommits = append(oldCommits, commitMsg)
+							newEntry.com = oldCommits
+							logEntries = append(logEntries, newEntry)
+						}
+
 						if committedLocal {
 							vcTimer.Stop()
 							// Execute and finally send back to client to aggregate
