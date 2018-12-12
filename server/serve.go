@@ -545,8 +545,20 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 					}
 					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
 				} else {
-					// Need to send some kind of redirect message
-					log.Printf("Send Back Redirect message - View Change")
+					result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(newView+3001, 10)}}}
+					clientID := logEntries[len(logEntries)-1].clientReq.ClientID
+					client, err := util.ConnectToClient(clientID) //client connection
+					if err != nil {
+						log.Fatalf("Failed to connect to GRPC server %v", err)
+					}
+					log.Printf("Connected to %v", clientID)
+					go func(c pb.PbftClient) {
+						crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
+						crp := pb.Msg_Crm{Crm: &crp_temp}
+						c.SendPbftMsg(context.Background(),
+							&pb.Msg{Operation: "Redirect", Arg: &crp})
+					}(client)
+					log.Printf("Send Back Redirect message - Wrong primary")
 				}
 			} else {
 				log.Printf("Received ClientRequestChan %v", cr.ClientID)
