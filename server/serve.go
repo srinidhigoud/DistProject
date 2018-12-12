@@ -342,7 +342,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 				if numberOfVotes >= reqValidVC(numberOfPeers) {
 					vcTimer.Stop()
 					log.Printf("Switching to new view - %v and taking on as primary", newView)
-					viewChange_temp := pb.ViewChangeMsg{Type: "new-view", NewView: newView, LastSequenceID: curreSeqID - 1, Node: strconv.FormatInt(nodeID+3001, 10)}
+					viewChange_temp := pb.ViewChangeMsg{Type: "new-view", NewView: newView, LastSequenceID: curreSeqID - 1, Node: strconv.FormatInt(newView+3001, 10)}
 					viewChange := pb.Msg_Vcm{Vcm: &viewChange_temp}
 					for p, c := range peerClients {
 						go func(c pb.PbftClient, p string) {
