@@ -237,6 +237,9 @@ type ClientResponse struct {
 
 //func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int) {
 func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int, isByzantine bool) {
+
+	var evluated map[int64]bool
+	evluated = make(map[int64]bool)
 	log.Printf("The byzantine condition is %v", isByzantine)
 	pbft := util.Pbft{PbftMsgChan: make(chan util.PbftMsgInput, 20)}
 	go util.RunPbftServer(&pbft, port)
@@ -279,6 +282,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 						oldEntry.committedLocal = true
 						clr := oldEntry.clientReq
 						s.HandleCommand(clr, currentView, id, curreSeqID)
+						evluated[clr.Timestamp] = true
 					}
 				}
 			}
@@ -532,6 +536,7 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 								clr := oldEntry.clientReq
 								//time.Sleep(100 * time.Millisecond)
 								s.HandleCommand(clr, currentView, id, curreSeqID)
+								evluated[clr.Timestamp] = true
 
 							}
 						} else {
@@ -556,58 +561,65 @@ func serve(s *KVStore, r *rand.Rand, peers *util.ArrayPeers, id string, port int
 
 		case inpChannel := <-s.C:
 			cr := inpChannel.clientRequest
-			if !viewChangePhase {
-				if currentView == nodeID {
-					log.Printf("Received ClientRequestChan %v", cr.ClientID)
-					printClientRequest(*cr, currentView, curreSeqID)
-					curreSeqID += 1
-					digest := util.Digest(cr)
-					if isByzantine {
-						digest = tamper(digest)
-					}
-					prePreMsg := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
-					prePreMsg_temp := pb.Msg_Ppm{Ppm: &prePreMsg}
-					for p, c := range peerClients {
-						go func(c pb.PbftClient, p string) {
-							_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "PrePrepare", Arg: &prePreMsg_temp})
-
-						}(c, p)
-						log.Printf("Sending PrePrepare to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
-					}
-					newEntry := logEntry{viewId: currentView, sequenceID: curreSeqID, clientReq: cr, prePrep: &prePreMsg,
-						pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false,
-						committed: false, committedLocal: false}
-					if int64(len(logEntries)) >= curreSeqID+1 {
-						logEntries[curreSeqID] = newEntry
-					} else {
-						logEntries = append(logEntries, newEntry)
-					}
-					//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
-				} else {
-					if vcTimer.TimeRemaining() < 100*time.Millisecond {
-						dur := util.RandomDuration(r)
-						log.Printf("Resetting timer for duration - %v", dur)
-						vcTimer.Reset(dur)
-					}
-					result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
-					clientID := cr.ClientID
-					client, err := util.ConnectToClient(clientID) //client connection
-					if err != nil {
-						log.Fatalf("Failed to connect to GRPC server %v", err)
-					}
-					log.Printf("Connected to %v", clientID)
-					go func(c pb.PbftClient) {
-						crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
-						crp := pb.Msg_Crm{Crm: &crp_temp}
-						c.SendPbftMsg(context.Background(),
-							&pb.Msg{Operation: "Redirect", Arg: &crp})
-					}(client)
-					log.Printf("Send Back Redirect message - Wrong primary, connected back to client %v", clientID)
-				}
+			val, exists := evluated[cr.Timestamp]{
+			if exists && val {
+				s.HandleCommand(crr, currentView, id, curreSeqID)
 			} else {
-				log.Printf("Received ClientRequestChan %v", cr.ClientID)
-				log.Printf("But.....Requested View Change")
+				evluated[cr.Timestamp] = false
+				if !viewChangePhase {
+					if currentView == nodeID {
+						log.Printf("Received ClientRequestChan %v", cr.ClientID)
+						printClientRequest(*cr, currentView, curreSeqID)
+						curreSeqID += 1
+						digest := util.Digest(cr)
+						if isByzantine {
+							digest = tamper(digest)
+						}
+						prePreMsg := pb.PrePrepareMsg{ViewId: currentView, SequenceID: curreSeqID, Digest: digest, Request: cr, Node: id}
+						prePreMsg_temp := pb.Msg_Ppm{Ppm: &prePreMsg}
+						for p, c := range peerClients {
+							go func(c pb.PbftClient, p string) {
+								_, _ = c.SendPbftMsg(context.Background(), &pb.Msg{Operation: "PrePrepare", Arg: &prePreMsg_temp})
+	
+							}(c, p)
+							log.Printf("Sending PrePrepare to %v for current view %v, sequenceID %v", p, currentView, curreSeqID)
+						}
+						newEntry := logEntry{viewId: currentView, sequenceID: curreSeqID, clientReq: cr, prePrep: &prePreMsg,
+							pre: make([]*pb.PrepareMsg, msgLimit), com: make([]*pb.CommitMsg, msgLimit), prepared: false,
+							committed: false, committedLocal: false}
+						if int64(len(logEntries)) >= curreSeqID+1 {
+							logEntries[curreSeqID] = newEntry
+						} else {
+							logEntries = append(logEntries, newEntry)
+						}
+						//printMyStoreAndLog(logEntries, s, currentView, curreSeqID)
+					} else {
+						if vcTimer.TimeRemaining() < 100*time.Millisecond {
+							dur := util.RandomDuration(r)
+							log.Printf("Resetting timer for duration - %v", dur)
+							vcTimer.Reset(dur)
+						}
+						result := pb.Result{Result: &pb.Result_Redirect{Redirect: &pb.Redirect{Server: strconv.FormatInt(currentView+3005, 10)}}}
+						clientID := cr.ClientID
+						client, err := util.ConnectToClient(clientID) //client connection
+						if err != nil {
+							log.Fatalf("Failed to connect to GRPC server %v", err)
+						}
+						log.Printf("Connected to %v", clientID)
+						go func(c pb.PbftClient) {
+							crp_temp := pb.ClientResponse{ViewId: int64(0), Timestamp: int64(0), ClientID: "", Node: "", NodeResult: &result, SequenceID: int64(-1)}
+							crp := pb.Msg_Crm{Crm: &crp_temp}
+							c.SendPbftMsg(context.Background(),
+								&pb.Msg{Operation: "Redirect", Arg: &crp})
+						}(client)
+						log.Printf("Send Back Redirect message - Wrong primary, connected back to client %v", clientID)
+					}
+				} else {
+					log.Printf("Received ClientRequestChan %v", cr.ClientID)
+					log.Printf("But.....Requested View Change")
+				}
 			}
+			
 		}
 	}
 	log.Printf("Strange to arrive here2")
